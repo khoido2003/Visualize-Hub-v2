@@ -14,7 +14,7 @@ export const Hero = () => {
         className="z-50 w-[250px] h-[250px] sm:w-[500px] sm:h-[500px]"
       />
 
-      <Button className="cursor-pointer px-10 py-7 group mt-6">
+      <Button className="cursor-pointer px-10 py-7 group mt-6 bg-black text-white hover:bg-white hover:text-black">
         <Link
           href="/dashboard"
           className="flex items-center justify-center gap-3 "

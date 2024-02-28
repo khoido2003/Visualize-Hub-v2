@@ -15,7 +15,7 @@ export const Navbar = () => {
         scrolled && "border-b shadow-sm "
       )}
     >
-      <Logo />
+      <Logo isLanding={true} />
       <SignIn />
     </div>
   );

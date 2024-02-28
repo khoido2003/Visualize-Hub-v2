@@ -6,7 +6,7 @@ export const Footer = () => {
   return (
     <>
       <div className="px-6 py-2 w-full h-36 mt-10 flex justify-between items-center">
-        <Logo />
+        <Logo isLanding={true} />
 
         <div>
           <Button variant="ghost">

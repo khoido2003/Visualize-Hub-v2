@@ -26,7 +26,7 @@ export const SignIn = () => {
           </SignInButton>
 
           <SignUpButton mode="modal">
-            <Button className="text-xs sm:text-sm">
+            <Button className="text-xs sm:text-sm bg-black text-white hover:bg-white hover:text-black">
               Get VisualizeHub Free
             </Button>
           </SignUpButton>
@@ -35,7 +35,7 @@ export const SignIn = () => {
 
       {isAuthenticated && !isLoading && (
         <div className="flex gap-3">
-          <Button>
+          <Button className="bg-black text-white hover:bg-white hover:text-black">
             <Link href="/dashboard" className="text-xs sm:text-sm">
               Continue your work
             </Link>
