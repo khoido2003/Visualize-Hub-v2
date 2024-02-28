@@ -17,9 +17,9 @@ export const Hero = () => {
       <Button className="cursor-pointer px-10 py-7 group mt-6">
         <Link
           href="/dashboard"
-          className="flex items-center justify-center gap-3"
+          className="flex items-center justify-center gap-3 "
         >
-          <span>Go to Workspace</span>
+          <span className="font-semibold">Go to Workspace</span>
           <ArrowUpRightSquare
             className="group-hover:mb-1 group-hover:ml-1"
             width={20}
@@ -35,7 +35,7 @@ export const Hero = () => {
           alt="decoration"
           height={70}
           width={70}
-          className="absolute bottom-[400px] left-96 hidden lg:block"
+          className="absolute lg:bottom-[480px] lg:left-96 hidden lg:block"
         />
 
         {/* House */}
@@ -61,7 +61,7 @@ export const Hero = () => {
           alt="decoration"
           height={70}
           width={70}
-          className="absolute bottom-[400px] right-[360px] rotate-45 hidden lg:block"
+          className="absolute lg:w-[60px] lg:h-[60px] xl:w-[70px] h-[70px] xl:bottom-[460px] xl:right-[350px]  lg:bottom-[500px] lg:right-[350px]    rotate-45 hidden lg:block"
         />
 
         {/* Planet */}

@@ -65,7 +65,7 @@ export const Heading = () => {
           alt="decoration"
           height={60}
           width={60}
-          className="absolute lg:h-[60px] lg:w-[60px] lg:top-[-110px] lg:left-[400px] md:top-[-80px] md:right-[400px] md:w-[50px] md:h-[50px]"
+          className="absolute lg:h-[60px] lg:w-[60px] lg:top-[-80px] lg:left-[400px] md:top-[-80px] md:right-[400px] md:w-[50px] md:h-[50px]"
         />
       </div>
     </div>

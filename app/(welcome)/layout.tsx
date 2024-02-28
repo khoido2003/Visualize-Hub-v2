@@ -5,7 +5,7 @@ const WelcomeLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="w-full min-h-full bg-soft ">
       <div className="m-auto max-w-6xl">
         <Navbar />
-        <main>{children}</main>
+        <main className="pt-32">{children}</main>
       </div>
     </div>
   );
