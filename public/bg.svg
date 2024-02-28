@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500">
+  <!-- Transparent Background -->
+  <rect width="100%" height="100%" fill="transparent"/>
+
+  <!-- Hand-drawn wavy line -->
+  <path d="M0,350 
+           C200,250 300,450 500,350 
+           S700,250 1000,350" 
+        fill="none" 
+        stroke="#999" 
+        stroke-width="8"/>
+</svg>

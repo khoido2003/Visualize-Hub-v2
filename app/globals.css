@@ -8,6 +8,13 @@ body,
   height: 100%;
 }
 
+* {
+  scrollbar-color: #808080 #f1f1f100; /* Change the colors as desired */
+  scrollbar-width: none; /* Adjust the width as needed */
+}
+
+/* ////////////////////////////// */
+
 @layer base {
   :root {
     --background: 0 0% 100%;
