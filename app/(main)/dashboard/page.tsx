@@ -1,26 +1,18 @@
-import { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "VisualizeHub - Workspace",
-  description: "Continue your work right here!",
-  icons: {
-    icon: [
-      {
-        media: "(prefers-color-scheme: light)",
-        url: "/light-logo.svg",
-        href: "/light-logo.svg",
-      },
-      {
-        media: "(prefers-color-scheme: dark)",
-        url: "/dark-logo.svg",
-        href: "/dark-logo.svg",
-      },
-    ],
-  },
-};
+import { useOrganization } from "@clerk/clerk-react";
+import { useTheme } from "next-themes";
+import { EmptyOrg } from "./_components/dashboard/empty-org";
 
 const DashBoardPage = () => {
-  return <div>Dashboard</div>;
+  const { organization } = useOrganization();
+  const { resolvedTheme } = useTheme();
+
+  return (
+    <div className="h-calc(100%-80px)] flex-1 p-6">
+      {!organization ? <EmptyOrg resolved={resolvedTheme} /> : <p></p>}
+    </div>
+  );
 };
 
 export default DashBoardPage;

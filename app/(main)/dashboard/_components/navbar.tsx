@@ -11,6 +11,7 @@ import { SearchInput } from "./navbar-components/search-input";
 import { useTheme } from "next-themes";
 import { InviteButton } from "./navbar-components/invite-button";
 import { ModeToggle } from "@/components/mode-toggle";
+import { MobileMenu } from "./navbar-components/mobile-menu";
 
 export const Navbar = () => {
   const { resolvedTheme } = useTheme();
@@ -54,12 +55,16 @@ export const Navbar = () => {
       </div>
 
       <ModeToggle />
-      {organization && <InviteButton />}
-      <UserButton
-        appearance={{
-          baseTheme: resolvedTheme === "dark" ? dark : undefined,
-        }}
-      />
+      <div className="gap-x-4 sm:flex hidden">
+        {organization && <InviteButton />}
+        <UserButton
+          appearance={{
+            baseTheme: resolvedTheme === "dark" ? dark : undefined,
+          }}
+        />
+      </div>
+
+      <MobileMenu />
     </div>
   );
 };
