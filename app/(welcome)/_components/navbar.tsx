@@ -12,7 +12,7 @@ export const Navbar = () => {
     <div
       className={cn(
         "px-6 py-3 bg-soft flex fixed top-0 z-[100] left-0 w-full justify-between",
-        scrolled && "border-b shadow-sm "
+        scrolled && "border-b shadow-sm border-light_bg"
       )}
     >
       <Logo isLanding={true} />

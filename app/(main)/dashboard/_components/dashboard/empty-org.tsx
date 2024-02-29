@@ -17,13 +17,13 @@ export const EmptyOrg = ({ resolved }: EmptyOrg) => {
       <Image
         src={
           resolved === "dark"
-            ? "/dashboard/landscape-dark.svg"
+            ? "/dashboard/effortless-d.svg"
             : "/dashboard/landscape-light.svg"
         }
         height={400}
         width={400}
         alt="empty"
-        className="sm:w-[400px] sm:h-[400px] w-[250px] h-[250px]"
+        className="aspect-square sm:w-[400px] sm:h-[400px] w-[250px] h-[250px]"
       />
 
       <h2 className="mt-6 text-xl sm:text-2xl font-semibold">
