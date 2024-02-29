@@ -1,30 +1,17 @@
-import { ThemeProvider } from "@/providers/theme-provider";
-import { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "VisualizeHub - Workspace",
-  description: "Continue your work right here!",
-  icons: {
-    icon: [
-      {
-        media: "(prefers-color-scheme: light)",
-        url: "/light-logo.svg",
-        href: "/light-logo.svg",
-      },
-      {
-        media: "(prefers-color-scheme: dark)",
-        url: "/dark-logo.svg",
-        href: "/dark-logo.svg",
-      },
-    ],
-  },
-};
+import { Loading } from "@/components/loading";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { AuthLoading, Authenticated } from "convex/react";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <main className="h-full">
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        {children}
+        <Authenticated>{children}</Authenticated>
+        <AuthLoading>
+          <Loading />
+        </AuthLoading>
       </ThemeProvider>
     </main>
   );

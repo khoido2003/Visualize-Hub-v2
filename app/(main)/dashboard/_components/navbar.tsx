@@ -1,6 +1,10 @@
 "use client";
 
-import { OrganizationSwitcher, useOrganization } from "@clerk/nextjs";
+import {
+  OrganizationSwitcher,
+  UserButton,
+  useOrganization,
+} from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 
 import { SearchInput } from "./navbar-components/search-input";
@@ -20,6 +24,8 @@ export const Navbar = () => {
 
       <div className="block flex-1 lg:hidden">
         <OrganizationSwitcher
+          afterCreateOrganizationUrl="/dashboard"
+          afterLeaveOrganizationUrl="/dashboard"
           appearance={{
             baseTheme: resolvedTheme === "dark" ? dark : undefined,
             elements: {
@@ -47,8 +53,13 @@ export const Navbar = () => {
         />
       </div>
 
-      {organization && <InviteButton />}
       <ModeToggle />
+      {organization && <InviteButton />}
+      <UserButton
+        appearance={{
+          baseTheme: resolvedTheme === "dark" ? dark : undefined,
+        }}
+      />
     </div>
   );
 };
