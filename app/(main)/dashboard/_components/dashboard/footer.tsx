@@ -3,8 +3,8 @@ import { Star } from "lucide-react";
 
 export const Footer = () => {
   return (
-    <div className="relative bg-black/85 p-2">
-      <p className="max-w-[calc(100%-20px)] truncate text-[13px] text-white">
+    <div className="relative bg-zinc-800 dark:bg-zinc-800 p-2">
+      <p className="max-w-[calc(100%-20px)] truncate text-[13px] text-light_bg  ">
         Untitled
       </p>
       <p className="truncate text-[11px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">

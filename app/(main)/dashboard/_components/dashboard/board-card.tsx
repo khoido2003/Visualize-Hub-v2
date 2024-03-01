@@ -10,8 +10,8 @@ interface BoardCardProps {
 export const BoardCard = ({ id, imageUrl }: BoardCardProps) => {
   return (
     <Link href={`/board/${id}`}>
-      <div className="group flex aspect-[100/127] flex-col justify-between overflow-hidden rounded-lg border border-black">
-        <div className="relative flex-1 bg-white/60">
+      <div className="group flex aspect-[100/101] flex-col justify-between overflow-hidden rounded-lg border border-black">
+        <div className="relative flex-1 bg-white/90 dark:bg-dark_bg">
           <Image src={imageUrl} fill alt="Picture" />
         </div>
 
