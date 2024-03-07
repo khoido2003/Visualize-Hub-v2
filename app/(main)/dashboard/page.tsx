@@ -5,7 +5,14 @@ import { useTheme } from "next-themes";
 import { EmptyOrg } from "./_components/dashboard/empty-org";
 import { BoardList } from "./_components/dashboard/board-list";
 
-const DashBoardPage = () => {
+interface DashBoardPageProps {
+  searchParams: {
+    search?: string;
+    favourites?: string;
+  };
+}
+
+const DashBoardPage = ({ searchParams }: DashBoardPageProps) => {
   const { organization } = useOrganization();
   const { resolvedTheme } = useTheme();
 
@@ -15,7 +22,7 @@ const DashBoardPage = () => {
         <EmptyOrg resolved={resolvedTheme} />
       ) : (
         <p className="h-[80%] ">
-          <BoardList />
+          <BoardList orgId={organization.id} query={searchParams} />
         </p>
       )}
     </div>
