@@ -67,10 +67,13 @@ export const OrgSidebar = () => {
 
       <div className="w-full space-y-1">
         <Button
-          variant={favourites ? "ghost" : "secondary"}
+          variant="ghost"
           asChild
           size="lg"
-          className="w-full justify-start px-2 font-normal bg-light_bg dark:bg-dark_bg dark:hover:bg-dark_bg/80"
+          className={cn(
+            "w-full justify-start px-2 font-normal bg-light_bg/40 dark:bg-dark_bg/20 dark:hover:bg-dark_bg/80",
+            !favourites && "bg-light_bg dark:bg-dark_bg"
+          )}
         >
           <Link href="/dashboard">
             <LayoutDashboardIcon className="mr-2 h-4 w-4" />
@@ -79,10 +82,13 @@ export const OrgSidebar = () => {
         </Button>
 
         <Button
-          variant={favourites ? "ghost" : "secondary"}
+          variant="ghost"
           asChild
           size="lg"
-          className="w-full justify-start px-2 font-normal bg-light_bg dark:bg-dark_bg dark:hover:bg-dark_bg/80"
+          className={cn(
+            "w-full justify-start px-2 font-normal bg-light_bg/40 hover:bg-light_bg/90 dark:bg-dark_bg/20 dark:hover:bg-dark_bg/40 ",
+            favourites && "bg-light_bg dark:bg-dark_bg"
+          )}
         >
           <Link
             href={{

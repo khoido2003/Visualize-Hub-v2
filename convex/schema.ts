@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { defineSchema, defineTable } from "convex/server";
 
 export default defineSchema({
+  // Boards table
   boards: defineTable({
     title: v.string(),
     orgId: v.string(),
@@ -15,6 +16,7 @@ export default defineSchema({
       filterFields: ["orgId"],
     }),
 
+  // Favourite boards
   userFavourites: defineTable({
     orgId: v.string(),
     userId: v.string(),
