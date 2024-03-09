@@ -9,7 +9,7 @@ export const useApiMutation = (mutationFunction: any) => {
     setPending(true);
 
     return apiMutation(payload)
-      .finally(() => setPending(true))
+      .finally(() => setPending(false))
       .then((result) => result)
       .catch((err) => {
         throw err;
