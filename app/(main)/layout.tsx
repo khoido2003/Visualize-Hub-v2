@@ -1,6 +1,7 @@
 "use client";
 
 import { Loading } from "@/components/loading";
+import { ModelProvider } from "@/providers/modal-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { AuthLoading, Authenticated } from "convex/react";
 import { Suspense } from "react";
@@ -12,6 +13,11 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <Authenticated>
           {children}
+
+          {/* Rename modal */}
+          <ModelProvider />
+
+          {/*Show notification */}
           <Toaster position="top-center" />
         </Authenticated>
         <AuthLoading>
