@@ -18,7 +18,7 @@ export const Footer = () => {
           </Button>
         </div>
       </div>
-      <p className="px-6 py-3 flex justify-center items-center">
+      <p className="text-xs md:text-sm px-6 py-3 flex justify-center items-center">
         &copy; 2024 VisualizeHub. All rights reserved. Designed by Khoi Do.
       </p>
     </>
