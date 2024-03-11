@@ -12,6 +12,8 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { Overlay } from "./overlay";
+import { Action } from "@/components/action";
+import { MoreHorizontal } from "lucide-react";
 
 interface BoardCardProps {
   id: string;
@@ -72,8 +74,15 @@ export const BoardCard = ({
             fill
             alt="Picture"
           />
-
+          {/* Overlay when hover */}
           <Overlay />
+
+          {/* Action button */}
+          <Action id={id} title={title} side="right">
+            <button className="absolute right-1 top-1 px-3 py-2 opacity-0 outline-none transition-opacity group-hover:opacity-100">
+              <MoreHorizontal className="text-white opacity-75 transition-opacity hover:opacity-100" />
+            </button>
+          </Action>
         </div>
 
         <Footer
