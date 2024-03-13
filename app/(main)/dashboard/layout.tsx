@@ -27,7 +27,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     <main className="h-full bg-soft dark:bg-background">
       <Sidebar />
       <div className="h-full sm:pl-[60px] ">
-        <div className="flex h-full gap-x-3">
+        <div className="flex h-full gap-x-3 relative">
           <OrgSidebar />
           <div className="h-full flex-1">
             <Navbar />
