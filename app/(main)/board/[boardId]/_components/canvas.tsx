@@ -16,7 +16,49 @@ export interface CanvasProps {
   boardId: string;
 }
 
+// Helper function
+function renderCanvas() {
+  // Setup the canvas
+  const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
+
+  // representing a two-dimensional rendering context.
+  const context = canvas!.getContext("2d");
+
+  // Erase the whole canvas or else the old element or old state will still be there and causing some weird behaviors.
+  context?.clearRect(0, 0, canvas!.width, canvas!.height);
+
+  // Linking roughjs to html canvas
+  const roughCanvas = rough.canvas(canvas!);
+  return roughCanvas;
+}
+
+////////////////////////////////
+
+// MAIN COMPONENT
 export const Canvas = ({ boardId }: CanvasProps) => {
+  // Cusror presence
+  const [myPresence, updateMyPresence] = useMyPresence();
+
+  // Delete element in the layer
+  const deleteLayers = useDeleteLayers();
+
+  // layers contain all the elements that rendered on the canvas
+  const layers = useStorage((root) => root.layers);
+
+  // Select element type
+  const [elementType, setElementType] = useState<ElementType>(
+    ElementType.Rectangle
+  );
+  // Check if drawing or not
+  const [isDrawing, setIsDrawing] = useState(false);
+
+  // ----------------------------------------
+
+  // These two state just to keep the canvas re-rendering when we change the window size
+  const [innerHeight, setInnerHeight] = useState<number>(0);
+  const [innerWidth, setInnerWidth] = useState<number>(0);
+
+  // Update the canvas width and height when resize
   useEffect(() => {
     // Function to update canvas size based on window dimensions
     const updateCanvasSize = () => {
@@ -25,6 +67,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       ) as HTMLCanvasElement;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      setInnerWidth(window.innerWidth);
+      setInnerHeight(window.innerHeight);
     };
 
     // Update canvas size when the window is resized
@@ -33,49 +77,38 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     // Call updateCanvasSize initially to set the canvas size
     updateCanvasSize();
 
+    // Render the canvas
+    const roughCanvas = renderCanvas();
+
+    // Render all the elements inside the layers
+    layers.forEach((layer, index) => {
+      // @ts-ignore
+      roughCanvas.draw(layer.roughElement!); // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
+
+      console.log(index + " ", { ...layer });
+    });
+
     // Remove event listener on component unmount
     return () => {
       window.removeEventListener("resize", updateCanvasSize);
     };
-  }, []);
+  }, [layers, innerHeight, innerWidth]);
 
-  //-------------------------------------------
-
-  // Cusror presence
-  const [myPresence, updateMyPresence] = useMyPresence();
-
-  //////////////////////////////////////////////////
-
-  const deleteLayers = useDeleteLayers();
-
-  const layers = useStorage((root) => root.layers);
-
-  const [elementType, setElementType] = useState<ElementType>(
-    ElementType.Rectangle
-  );
-  // Check if drawing or not
-  const [isDrawing, setIsDrawing] = useState(false);
+  // -------------------------------------------
 
   useEffect(() => {
-    // Setup the canvas
-    const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
+    // Render the canvas
+    const roughCanvas = renderCanvas();
 
-    // representing a two-dimensional rendering context.
-    const context = canvas!.getContext("2d");
-
-    // Erase the whole canvas or else the old element or old state will still be there and causing some weird behaviors.
-    context?.clearRect(0, 0, canvas!.width, canvas!.height);
-
-    // Linking roughjs to html canvas
-    const roughCanvas = rough.canvas(canvas!);
-
-    layers.forEach((layer) => {
+    layers.forEach((layer, index) => {
       // @ts-ignore
       roughCanvas.draw(layer.roughElement!); // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
 
-      console.log({ ...layer });
+      console.log(index + " ", { ...layer });
     });
   }, [layers]);
+
+  //-----------------------------------------
 
   const insertElement = useMutation(
     ({ storage, setMyPresence }, element: CanvasElement) => {
@@ -86,6 +119,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     },
     []
   );
+
+  // ---------------------------------------
 
   const updateElement = useMutation(
     ({ storage, setMyPresence }, clientX: number, clientY: number) => {
@@ -132,6 +167,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   ////////////////////////////////////////////////////////////
 
+  // ACTIONS
+
+  // Start drawing(mouse down event)
   const handleMouseDown = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
   ) => {
@@ -147,6 +185,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
     insertElement(element);
   };
+
+  // ----------------------------------------------
 
   // MOUSE MOVE (Click mouse and move the mouse on the canvas)
   const handleMouseMove = throttle(
@@ -164,12 +204,18 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     { leading: true, trailing: true }
   );
 
+  // --------------------------------------------------
+
+  // Stop drawing (mouse up)
   const handleMouseUp = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
   ) => {
     setIsDrawing(false);
   };
 
+  // --------------------------------------------
+
+  // The cursor move away from the browser
   const handlePointerLeave = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
   ) => {

@@ -40,7 +40,7 @@ export const createElement = ({
         radiusX * 2,
         radiusY * 2,
         {
-          roughness: 0,
+          roughness: 1,
         }
       );
       break;
