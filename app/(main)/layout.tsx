@@ -1,7 +1,7 @@
 "use client";
 
 import { Loading } from "@/components/loading";
-import { ModelProvider } from "@/providers/modal-provider";
+import { ModalProvider } from "@/providers/modal-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { AuthLoading, Authenticated } from "convex/react";
 import { Suspense } from "react";
@@ -15,7 +15,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
           {children}
 
           {/* Rename modal */}
-          <ModelProvider />
+          <ModalProvider />
 
           {/*Show notification */}
           <Toaster position="top-center" />

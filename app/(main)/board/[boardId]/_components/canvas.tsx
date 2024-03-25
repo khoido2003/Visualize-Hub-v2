@@ -11,6 +11,8 @@ import CursorPresence from "./cursor-display/cursor-presence";
 import { createElement } from "../_actions/create-element";
 import { LiveObject } from "@liveblocks/client";
 import { useDeleteLayers } from "@/hooks/use-delete-elements";
+import { Info } from "./info";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export interface CanvasProps {
   boardId: string;
@@ -227,43 +229,16 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   // RENDER THE CANVAS
   // if (isClient === false) return null;
   return (
-    <div className="">
+    <main className="h-full w-full relative">
       {/* Show other people cursor */}
       <CursorPresence />
 
-      <div className="fixed top-2 left-3 flex gap-3">
-        <div>
-          <input
-            type="radio"
-            id="line"
-            checked={elementType === "line"}
-            onChange={() => setElementType(ElementType.Line)}
-            className="mr-2"
-          />
-          <label htmlFor="line">Line</label>
-        </div>
+      {/* User information */}
+      <Info boardId={boardId} />
 
-        <div>
-          <input
-            type="radio"
-            id="rectangle"
-            checked={elementType === "rectangle"}
-            onChange={() => setElementType(ElementType.Rectangle)}
-            className="mr-2"
-          />
-          <label htmlFor="rectangle">Rectangle</label>
-        </div>
-
-        <div>
-          <input
-            type="radio"
-            id="circle"
-            checked={elementType === "circle"}
-            onChange={() => setElementType(ElementType.Circle)}
-            className="mr-2"
-          />
-          <label htmlFor="circle">Circle</label>
-        </div>
+      {/*  Mode toggle */}
+      <div className="absolute right-2 top-2">
+        <ModeToggle />
       </div>
 
       {/* Canvas */}
@@ -277,6 +252,6 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         onMouseUp={handleMouseUp}
         onPointerLeave={handlePointerLeave}
       ></canvas>
-    </div>
+    </main>
   );
 };

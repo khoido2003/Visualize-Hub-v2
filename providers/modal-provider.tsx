@@ -3,7 +3,7 @@
 import { RenameModal } from "@/components/rename-modal";
 import { useEffect, useState } from "react";
 
-export const ModelProvider = () => {
+export const ModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
