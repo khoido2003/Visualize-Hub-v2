@@ -29,7 +29,7 @@ export const Info = ({ boardId }: InfoProps) => {
   });
 
   return (
-    <div className="absolute left-2 top-2 flex h-12 items-center rounded bt-white px-1.5 shadow-md">
+    <div className="absolute left-2 top-2 hidden h-12 items-center rounded px-1.5 shadow-md md:flex">
       <Hint label="Back to dashboard" side="bottom" sideOffset={10}>
         <Button asChild variant="board" className="px-2">
           <Link href="/">
@@ -50,7 +50,7 @@ export const Info = ({ boardId }: InfoProps) => {
       <Hint label="Edit title" side="bottom" sideOffset={10}>
         <Button
           variant="board"
-          className="px-2 text-sm font-font-normal"
+          className="font-font-normal px-2 text-sm"
           onClick={() => {
             onOpen(data?._id!, data?.title!);
           }}

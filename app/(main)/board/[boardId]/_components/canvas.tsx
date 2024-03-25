@@ -13,6 +13,7 @@ import { LiveObject } from "@liveblocks/client";
 import { useDeleteLayers } from "@/hooks/use-delete-elements";
 import { Info } from "./info";
 import { ModeToggle } from "@/components/mode-toggle";
+import { Toolbar } from "./toolbar";
 
 export interface CanvasProps {
   boardId: string;
@@ -49,7 +50,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   // Select element type
   const [elementType, setElementType] = useState<ElementType>(
-    ElementType.Rectangle
+    ElementType.Rectangle,
   );
   // Check if drawing or not
   const [isDrawing, setIsDrawing] = useState(false);
@@ -65,7 +66,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     // Function to update canvas size based on window dimensions
     const updateCanvasSize = () => {
       const canvas = document.getElementById(
-        "canvas-board"
+        "canvas-board",
       ) as HTMLCanvasElement;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -119,7 +120,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       const layer = new LiveObject(element);
       liveLayers.push(layer);
     },
-    []
+    [],
   );
 
   // ---------------------------------------
@@ -143,7 +144,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // Update the new height and width of the element
       liveLayers.set(index, updatedElement);
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -173,7 +174,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   // Start drawing(mouse down event)
   const handleMouseDown = (
-    event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+    event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
     setIsDrawing(true);
     const { clientX, clientY } = event;
@@ -203,14 +204,14 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       updateElement(clientX, clientY);
     },
     1000 / 60, // 60 FPS
-    { leading: true, trailing: true }
+    { leading: true, trailing: true },
   );
 
   // --------------------------------------------------
 
   // Stop drawing (mouse up)
   const handleMouseUp = (
-    event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+    event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
     setIsDrawing(false);
   };
@@ -219,7 +220,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   // The cursor move away from the browser
   const handlePointerLeave = (
-    event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+    event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
     updateMyPresence({ cursor: null });
   };
@@ -229,7 +230,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   // RENDER THE CANVAS
   // if (isClient === false) return null;
   return (
-    <main className="h-full w-full relative">
+    <main className=" relative h-full w-full">
       {/* Show other people cursor */}
       <CursorPresence />
 
@@ -240,6 +241,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       <div className="absolute right-2 top-2">
         <ModeToggle />
       </div>
+
+      {/* Toolbar */}
+      <Toolbar />
 
       {/* Canvas */}
       <canvas
