@@ -15,15 +15,31 @@ export const createElement = ({
   x2,
   y2,
   elementType,
+  fill,
+  fillStyle,
+  roughness,
+  stroke,
 }: CanvasElement) => {
   let roughElement;
 
   switch (elementType) {
     case "line":
-      roughElement = generator.line(x1, y1, x2, y2);
+      roughElement = generator.line(x1, y1, x2, y2, {
+        fill,
+        fillStyle,
+        roughness,
+        stroke,
+        strokeWidth: 3,
+      });
       break;
     case "rectangle":
-      roughElement = generator.rectangle(x1, y1, x2 - x1, y2 - y1);
+      roughElement = generator.rectangle(x1, y1, x2 - x1, y2 - y1, {
+        fill,
+        fillStyle,
+        roughness,
+        stroke,
+        strokeWidth: 3,
+      });
       break;
     case "circle":
       // Calculate the center of the circle
@@ -40,8 +56,12 @@ export const createElement = ({
         radiusX * 2,
         radiusY * 2,
         {
-          roughness: 1,
-        }
+          fill,
+          fillStyle,
+          roughness,
+          stroke,
+          strokeWidth: 3,
+        },
       );
       break;
     case "pencil":

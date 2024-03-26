@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ElementType } from "@/types/canvas";
 import {
   Circle,
   Eraser,
@@ -8,35 +9,70 @@ import {
   Square,
   Type,
 } from "lucide-react";
+import { Dispatch, SetStateAction } from "react";
 
-export const Toolbar = () => {
+interface ToolbarProps {
+  setElementType: Dispatch<SetStateAction<ElementType>>;
+}
+
+export const Toolbar = ({ setElementType }: ToolbarProps) => {
   return (
-    <div className="absolute top-2 flex h-12 items-center rounded-md px-1.5 shadow-md sm:left-2 lg:left-80">
-      <Button variant="board" className="">
+    <div className="absolute left-0 right-0 top-2 ml-auto mr-auto  flex h-12 w-[340px] items-center rounded-md px-1.5 shadow-md ">
+      <Button variant="board">
         <MousePointer height={15} width={15} />
       </Button>
 
-      <Button variant="board" className="">
+      <Button
+        variant="board"
+        onClick={() => {
+          setElementType(ElementType.Rectangle);
+        }}
+      >
         <Square height={15} width={15} />
       </Button>
 
-      <Button variant="board" className="">
+      <Button
+        variant="board"
+        onClick={() => {
+          setElementType(ElementType.Circle);
+        }}
+      >
         <Circle height={15} width={15} />
       </Button>
 
-      <Button variant="board" className="">
+      <Button
+        variant="board"
+        onClick={() => {
+          setElementType(ElementType.Line);
+        }}
+      >
         <Minus height={15} width={15} />
       </Button>
 
-      <Button variant="board" className="">
+      <Button
+        variant="board"
+        onClick={() => {
+          // setElementType();
+        }}
+      >
         <Pencil height={15} width={15} />
       </Button>
 
-      <Button variant="board" className="">
+      <Button
+        variant="board"
+        onClick={() => {
+          // setElementType();
+        }}
+      >
         <Type height={15} width={15} />
       </Button>
 
-      <Button variant="board" className="">
+      <Button
+        variant="board"
+        onClick={() => {
+          // setElementType();
+        }}
+      >
         <Eraser height={15} width={15} />
       </Button>
     </div>

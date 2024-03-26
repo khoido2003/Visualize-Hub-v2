@@ -3,7 +3,7 @@
 import rough from "roughjs";
 import { throttle } from "lodash";
 
-import { CanvasElement, ElementType } from "@/types/canvas";
+import { CanvasElement, ElementType, ToolOptionsType } from "@/types/canvas";
 
 import { useMutation, useMyPresence, useStorage } from "@/liveblocks.config";
 import { useEffect, useLayoutEffect, useState } from "react";
@@ -14,7 +14,9 @@ import { useDeleteLayers } from "@/hooks/use-delete-elements";
 import { Info } from "./info";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Toolbar } from "./toolbar";
-
+import { Participants } from "./participants-display/participants";
+import { ToolOptions } from "./tool-options";
+import { useTheme } from "next-themes";
 export interface CanvasProps {
   boardId: string;
 }
@@ -28,10 +30,11 @@ function renderCanvas() {
   const context = canvas!.getContext("2d");
 
   // Erase the whole canvas or else the old element or old state will still be there and causing some weird behaviors.
-  context?.clearRect(0, 0, canvas!.width, canvas!.height);
+  context!.clearRect(0, 0, canvas!.width, canvas!.height);
 
   // Linking roughjs to html canvas
   const roughCanvas = rough.canvas(canvas!);
+
   return roughCanvas;
 }
 
@@ -39,6 +42,17 @@ function renderCanvas() {
 
 // MAIN COMPONENT
 export const Canvas = ({ boardId }: CanvasProps) => {
+  // Check dark mode or light mode
+  const { resolvedTheme } = useTheme();
+
+  // Took options initial state
+  const [toolOptions, setToolOptions] = useState<ToolOptionsType>({
+    stroke: resolvedTheme === "dark" ? "#fff" : "#000",
+    roughness: 0,
+    fill: "",
+    fillStyle: "",
+  });
+
   // Cusror presence
   const [myPresence, updateMyPresence] = useMyPresence();
 
@@ -85,17 +99,35 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
     // Render all the elements inside the layers
     layers.forEach((layer, index) => {
-      // @ts-ignore
-      roughCanvas.draw(layer.roughElement!); // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
+      // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
+      if (
+        resolvedTheme === "dark" &&
+        // @ts-ignore
+        layer.roughElement!.options.stroke === "#000"
+      ) {
+        // @ts-ignore
+        layer.roughElement!.options.stroke = "#fff";
+      }
 
-      console.log(index + " ", { ...layer });
+      if (
+        resolvedTheme !== "dark" &&
+        // @ts-ignore
+        layer.roughElement!.options.stroke === "#fff"
+      ) {
+        // @ts-ignore
+        layer.roughElement!.options.stroke = "#000";
+      }
+      // @ts-ignore
+      roughCanvas.draw(layer.roughElement!);
+
+      // console.log(index + " ", { ...layer });
     });
 
     // Remove event listener on component unmount
     return () => {
       window.removeEventListener("resize", updateCanvasSize);
     };
-  }, [layers, innerHeight, innerWidth]);
+  }, [layers, innerHeight, innerWidth, resolvedTheme]);
 
   // -------------------------------------------
 
@@ -107,7 +139,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // @ts-ignore
       roughCanvas.draw(layer.roughElement!); // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
 
-      console.log(index + " ", { ...layer });
+      // console.log(index + " ", { ...layer });
     });
   }, [layers]);
 
@@ -138,13 +170,18 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         x2: clientX,
         y2: clientY,
         elementType,
+
+        stroke: toolOptions.stroke,
+        fill: toolOptions.fill,
+        fillStyle: toolOptions.fillStyle,
+        roughness: toolOptions.roughness ? toolOptions.roughness : 1,
       }) as CanvasElement;
 
       const updatedElement = new LiveObject(element);
       // Update the new height and width of the element
       liveLayers.set(index, updatedElement);
     },
-    [],
+    [toolOptions],
   );
 
   useEffect(() => {
@@ -184,6 +221,11 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       x2: clientX,
       y2: clientY,
       elementType,
+
+      stroke: toolOptions.stroke,
+      fill: toolOptions.fill,
+      fillStyle: toolOptions.fillStyle,
+      roughness: toolOptions.roughness ? toolOptions.roughness : 1,
     });
 
     insertElement(element);
@@ -197,6 +239,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // The new height and width of the element or position of mouse cursor
       const { clientX, clientY } = event;
 
+      // Update the position of the user cursor position to liveblocks
       updateMyPresence({ cursor: { x: clientX, y: clientY } });
 
       if (!isDrawing) return;
@@ -227,6 +270,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   /////////////////////////////////////
 
+  //////////////////////
+
   // RENDER THE CANVAS
   // if (isClient === false) return null;
   return (
@@ -234,16 +279,22 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       {/* Show other people cursor */}
       <CursorPresence />
 
+      {/* Participants in the room */}
+      <Participants />
+
       {/* User information */}
       <Info boardId={boardId} />
 
       {/*  Mode toggle */}
-      <div className="absolute right-2 top-2">
+      <div className="absolute bottom-2 right-2 hidden md:block">
         <ModeToggle />
       </div>
 
       {/* Toolbar */}
-      <Toolbar />
+      <Toolbar setElementType={setElementType} />
+
+      {/* Tool options */}
+      <ToolOptions setToolOptions={setToolOptions} toolOptions={toolOptions} />
 
       {/* Canvas */}
       <canvas

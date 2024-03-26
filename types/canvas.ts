@@ -26,7 +26,12 @@ export type CanvasElement = {
   elementType: ElementType;
   position?: string | null;
   points?: StrokePoint[];
-  // options?: StrokeOptions | undefined;
+
+  // Style of the element
+  fill?: string;
+  fillStyle?: string;
+  roughness?: number;
+  stroke?: string;
 };
 
 // Drawing with freehand
@@ -37,3 +42,11 @@ export type StrokePoint = {
 };
 
 export type Layer = CanvasElement;
+
+export interface ToolOptionsType {
+  // Style of the element
+  fill?: string;
+  fillStyle?: string;
+  roughness?: number;
+  stroke?: string;
+}
