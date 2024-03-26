@@ -291,7 +291,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       </div>
 
       {/* Toolbar */}
-      <Toolbar setElementType={setElementType} />
+      <Toolbar setElementType={setElementType} elementType={elementType} />
 
       {/* Tool options */}
       <ToolOptions setToolOptions={setToolOptions} toolOptions={toolOptions} />

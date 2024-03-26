@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ElementType } from "@/types/canvas";
 import {
   Circle,
@@ -13,11 +14,12 @@ import { Dispatch, SetStateAction } from "react";
 
 interface ToolbarProps {
   setElementType: Dispatch<SetStateAction<ElementType>>;
+  elementType: ElementType;
 }
 
-export const Toolbar = ({ setElementType }: ToolbarProps) => {
+export const Toolbar = ({ setElementType, elementType }: ToolbarProps) => {
   return (
-    <div className="absolute left-0 right-0 top-2 ml-auto mr-auto  flex h-12 w-[340px] items-center rounded-md px-1.5 shadow-md ">
+    <div className="absolute left-0 right-0 top-2 ml-auto mr-auto  flex h-12 w-[360px] items-center gap-1 rounded-md px-1.5 shadow-md">
       <Button variant="board">
         <MousePointer height={15} width={15} />
       </Button>
@@ -27,6 +29,10 @@ export const Toolbar = ({ setElementType }: ToolbarProps) => {
         onClick={() => {
           setElementType(ElementType.Rectangle);
         }}
+        className={cn(
+          "",
+          elementType === ElementType.Rectangle && "bg-blue-500/20",
+        )}
       >
         <Square height={15} width={15} />
       </Button>
@@ -36,6 +42,10 @@ export const Toolbar = ({ setElementType }: ToolbarProps) => {
         onClick={() => {
           setElementType(ElementType.Circle);
         }}
+        className={cn(
+          "",
+          elementType === ElementType.Circle && "bg-blue-500/20",
+        )}
       >
         <Circle height={15} width={15} />
       </Button>
@@ -45,6 +55,7 @@ export const Toolbar = ({ setElementType }: ToolbarProps) => {
         onClick={() => {
           setElementType(ElementType.Line);
         }}
+        className={cn("", elementType === ElementType.Line && "bg-blue-500/20")}
       >
         <Minus height={15} width={15} />
       </Button>
@@ -54,6 +65,10 @@ export const Toolbar = ({ setElementType }: ToolbarProps) => {
         onClick={() => {
           // setElementType();
         }}
+        className={cn(
+          "",
+          // elementType === ElementType.Rectangle && "bg-blue-500/20",
+        )}
       >
         <Pencil height={15} width={15} />
       </Button>
@@ -63,6 +78,10 @@ export const Toolbar = ({ setElementType }: ToolbarProps) => {
         onClick={() => {
           // setElementType();
         }}
+        className={cn(
+          "",
+          // elementType === ElementType.Rectangle && "bg-blue-500/20",
+        )}
       >
         <Type height={15} width={15} />
       </Button>
@@ -72,6 +91,10 @@ export const Toolbar = ({ setElementType }: ToolbarProps) => {
         onClick={() => {
           // setElementType();
         }}
+        className={cn(
+          "",
+          // elementType === ElementType.Rectangle && "bg-blue-500/20",
+        )}
       >
         <Eraser height={15} width={15} />
       </Button>
