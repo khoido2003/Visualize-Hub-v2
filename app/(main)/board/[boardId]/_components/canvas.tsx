@@ -156,7 +156,6 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const insertElement = useMutation(
     ({ storage, setMyPresence }, element: CanvasElement) => {
       const liveLayers = storage.get("layers");
-
       const layer = new LiveObject(element);
       liveLayers.push(layer);
     },
@@ -181,10 +180,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       const liveLayers = storage.get("layers");
 
       // Get the postion of the curent element inside the layers
-      id !== "no-value" ? (index = id) : (index = liveLayers.length - 1);
-      console.log(index, newX1, newY1, newX2, newY2);
-      console.log(action);
-      console.log(layers);
+      // Because the Id is always smaller than its index 1 so we have to plus 1 to id to get the current index of the element.
+      // NOTE: index = id + 1 !IMPORTANT
+      id !== "no-value" ? (index = id + 1) : (index = liveLayers.length - 1);
 
       // Take out the corresponding element from the layers
       const { x1, y1, elementType, stroke, fill, fillStyle, roughness } =
@@ -196,8 +194,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         newY1 = y1;
       }
 
+      // As I explain above, the index is greater than the id 1 so we need to minus 1 from the index to calculate the id
       element = createElement({
-        id: index,
+        id: index - 1, // This is imporant or else it will cause some weird behavior on the canvas
         x1: newX1 as number,
         y1: newY1 as number,
         x2: newX2,
@@ -266,11 +265,14 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
       // If the element is existing
       if (element) {
-        // Calculate the distance between the mouse to the coordinates of the element
+        // Calculate the distance between the mouse to the coordinates of the element so we can uuse it later to calcualte the new position of the element.
         const offsetX = clientX - element.x1;
         const offsetY = clientY - element.y1;
-        console.log(element);
+
+        // Store the selected element
         setSelectedElement({ ...element, offsetX, offsetY });
+
+        // Change action to moving
         setAction("moving");
       }
     }
@@ -294,7 +296,10 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         roughness: toolOptions.roughness ? toolOptions.roughness : 1,
       });
 
+      // CHange action to drawing
       setAction("drawing");
+
+      // Add the new created element to the layers list
       insertElement(element);
     }
   };
