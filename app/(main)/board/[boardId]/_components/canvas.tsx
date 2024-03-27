@@ -173,20 +173,28 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       newX2: number,
       newY2: number,
     ) => {
-      let index;
-      let element;
-
       // The current list of elements
       const liveLayers = storage.get("layers");
 
+      let index;
+      let element;
       // Get the postion of the curent element inside the layers
       // Because the Id is always smaller than its index 1 so we have to plus 1 to id to get the current index of the element.
       // NOTE: index = id + 1 !IMPORTANT
-      id !== "no-value" ? (index = id + 1) : (index = liveLayers.length - 1);
+      id !== "no-value" ? (index = id + 1) : (index = layers.length - 1);
+      // Note: Don't use liveLayers here to calculate the index since the way it update the state is not stable so it can causing bugs with the id
 
       // Take out the corresponding element from the layers
-      const { x1, y1, elementType, stroke, fill, fillStyle, roughness } =
-        liveLayers.get(index)!.toObject();
+      const {
+        x1,
+        y1,
+        elementType,
+        stroke,
+        fill,
+        fillStyle,
+        roughness,
+        id: curId,
+      } = liveLayers.get(index)!.toObject();
 
       // Update the position of the element if we create it
       if (newX1 === "no-value" && newY1 === "no-value") {
@@ -280,6 +288,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     else {
       // Set the id for the new created element
       const id = layers.length - 1;
+      console.log(id);
 
       // Add the new element to the layers array
       const element = createElement({
