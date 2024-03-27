@@ -25,7 +25,7 @@ function Cursor({ connectionId }: Props) {
 
   return (
     <div
-      className=""
+      className="z-50"
       style={{
         position: "absolute",
         left: 0,

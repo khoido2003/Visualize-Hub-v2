@@ -17,6 +17,7 @@ import { Toolbar } from "./toolbar";
 import { Participants } from "./participants-display/participants";
 import { ToolOptions } from "./tool-options";
 import { useTheme } from "next-themes";
+import { getElementAtPosition } from "../_actions/get-element-at-position";
 export interface CanvasProps {
   boardId: string;
 }
@@ -66,8 +67,14 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const [elementType, setElementType] = useState<ElementType>(
     ElementType.Rectangle,
   );
-  // Check if drawing or not
-  const [isDrawing, setIsDrawing] = useState(false);
+
+  // Check if drawing or moving or none
+  const [action, setAction] = useState<"moving" | "drawing" | "none">("none");
+
+  // Check the current element being selected
+  const [selectedElement, setSelectedElement] = useState<CanvasElement | null>(
+    null,
+  );
 
   // ----------------------------------------
 
@@ -145,6 +152,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   //-----------------------------------------
 
+  // Add the new element to the list of layer
   const insertElement = useMutation(
     ({ storage, setMyPresence }, element: CanvasElement) => {
       const liveLayers = storage.get("layers");
@@ -158,31 +166,65 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   // ---------------------------------------
 
   const updateElement = useMutation(
-    ({ storage, setMyPresence }, clientX: number, clientY: number) => {
-      const liveLayers = storage.get("layers");
-      const index = liveLayers.length - 1;
-      const { x1, y1, elementType } = liveLayers.get(index)!.toObject();
+    (
+      { storage, setMyPresence },
+      id: number | "no-value",
+      newX1: number | "no-value",
+      newY1: number | "no-value",
+      newX2: number,
+      newY2: number,
+    ) => {
+      let index;
+      let element;
 
-      // Keep the position, only update the height and width due to the postion of the mouse
-      const element = createElement({
-        x1,
-        y1,
-        x2: clientX,
-        y2: clientY,
+      // The current list of elements
+      const liveLayers = storage.get("layers");
+
+      // Get the postion of the curent element inside the layers
+      id !== "no-value" ? (index = id) : (index = liveLayers.length - 1);
+      console.log(index, newX1, newY1, newX2, newY2);
+      console.log(action);
+      console.log(layers);
+
+      // Take out the corresponding element from the layers
+      const { x1, y1, elementType, stroke, fill, fillStyle, roughness } =
+        liveLayers.get(index)!.toObject();
+
+      // Update the position of the element if we create it
+      if (newX1 === "no-value" && newY1 === "no-value") {
+        newX1 = x1;
+        newY1 = y1;
+      }
+
+      element = createElement({
+        id: index,
+        x1: newX1 as number,
+        y1: newY1 as number,
+        x2: newX2,
+        y2: newY2,
         elementType,
 
-        stroke: toolOptions.stroke,
-        fill: toolOptions.fill,
-        fillStyle: toolOptions.fillStyle,
-        roughness: toolOptions.roughness ? toolOptions.roughness : 1,
+        stroke: action === "drawing" ? toolOptions.stroke : stroke,
+        fill: action === "drawing" ? toolOptions.fill : fill,
+        fillStyle: action === "drawing" ? toolOptions.fillStyle : fillStyle,
+        roughness:
+          action === "drawing"
+            ? toolOptions.roughness
+              ? toolOptions.roughness
+              : 1
+            : roughness,
       }) as CanvasElement;
 
+      // Create the new state of the element
       const updatedElement = new LiveObject(element);
-      // Update the new height and width of the element
+
+      // Update the new height and width of the element by overwrite it with the new value
       liveLayers.set(index, updatedElement);
     },
-    [toolOptions],
+    [toolOptions, selectedElement, action],
   );
+
+  //---------------------------
 
   useEffect(() => {
     function onKeydown(e: KeyboardEvent) {
@@ -205,7 +247,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     };
   }, [deleteLayers, layers]);
 
-  ////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////
 
   // ACTIONS
 
@@ -213,22 +257,46 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const handleMouseDown = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
-    setIsDrawing(true);
+    // Check the current position of the mouse cursor
     const { clientX, clientY } = event;
-    const element = createElement({
-      x1: clientX,
-      y1: clientY,
-      x2: clientX,
-      y2: clientY,
-      elementType,
 
-      stroke: toolOptions.stroke,
-      fill: toolOptions.fill,
-      fillStyle: toolOptions.fillStyle,
-      roughness: toolOptions.roughness ? toolOptions.roughness : 1,
-    });
+    // Find the element that going to be selected
+    if (elementType === "none") {
+      const element = getElementAtPosition(clientX, clientY, layers);
 
-    insertElement(element);
+      // If the element is existing
+      if (element) {
+        // Calculate the distance between the mouse to the coordinates of the element
+        const offsetX = clientX - element.x1;
+        const offsetY = clientY - element.y1;
+        console.log(element);
+        setSelectedElement({ ...element, offsetX, offsetY });
+        setAction("moving");
+      }
+    }
+    // Or create a new element
+    else {
+      // Set the id for the new created element
+      const id = layers.length - 1;
+
+      // Add the new element to the layers array
+      const element = createElement({
+        id,
+        x1: clientX,
+        y1: clientY,
+        x2: clientX,
+        y2: clientY,
+        elementType,
+
+        stroke: toolOptions.stroke,
+        fill: toolOptions.fill,
+        fillStyle: toolOptions.fillStyle,
+        roughness: toolOptions.roughness ? toolOptions.roughness : 1,
+      });
+
+      setAction("drawing");
+      insertElement(element);
+    }
   };
 
   // ----------------------------------------------
@@ -242,9 +310,40 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // Update the position of the user cursor position to liveblocks
       updateMyPresence({ cursor: { x: clientX, y: clientY } });
 
-      if (!isDrawing) return;
+      // Update the mouse cursor style by checking if the cursor is inside the element or not
+      if (elementType === "none") {
+        document.body.style.cursor = getElementAtPosition(
+          clientX,
+          clientY,
+          layers,
+        )
+          ? "move"
+          : "default";
+      }
 
-      updateElement(clientX, clientY);
+      // Handle create or move element base on the current action
+      switch (action) {
+        case "drawing":
+          // Keep the positon, only update the height and width of the element due to the position of the mouse cursor
+          updateElement("no-value", "no-value", "no-value", clientX, clientY);
+          break;
+
+        case "moving":
+          const { id, x1, y1, x2, y2, offsetX, offsetY, elementType } =
+            selectedElement as CanvasElement;
+
+          const width = x2 - x1;
+          const height = y2 - y1;
+
+          const newX1 = clientX - offsetX!;
+          const newY1 = clientY - offsetY!;
+
+          updateElement(id!, newX1, newY1, newX1 + width, newY1 + height);
+          break;
+
+        default:
+          break;
+      }
     },
     1000 / 60, // 60 FPS
     { leading: true, trailing: true },
@@ -256,7 +355,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const handleMouseUp = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
-    setIsDrawing(false);
+    setAction("none");
+    setSelectedElement(null);
   };
 
   // --------------------------------------------
@@ -285,8 +385,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       {/* User information */}
       <Info boardId={boardId} />
 
-      {/*  Mode toggle */}
-      <div className="absolute bottom-2 right-2 hidden md:block">
+      {/*  Mode toggle light/dark */}
+      <div className="absolute bottom-2 right-2 z-50 hidden md:block">
         <ModeToggle />
       </div>
 

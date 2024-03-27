@@ -11,7 +11,7 @@ export enum ElementType {
 }
 
 export type CanvasElement = {
-  // id?: number;
+  id?: number;
   x1: number;
   y1: number;
   x2: number;
@@ -49,4 +49,27 @@ export interface ToolOptionsType {
   fillStyle?: string;
   roughness?: number;
   stroke?: string;
+}
+
+export interface LayersType {
+  readonly x1: number;
+  readonly y1: number;
+  readonly x2: number;
+  readonly y2: number;
+  readonly offsetX?: number;
+  readonly offsetY?: number;
+
+  readonly sxOffsets?: number[];
+  readonly yOffsets?: number[];
+
+  // roughElement?: Drawable;
+  readonly elementType: ElementType;
+  readonly position?: string | null;
+  readonly points?: StrokePoint[];
+
+  // Style of the element
+  readonly fill?: string;
+  readonly fillStyle?: string;
+  readonly roughness?: number;
+  readonly stroke?: string;
 }

@@ -29,10 +29,10 @@ export const Info = ({ boardId }: InfoProps) => {
   });
 
   return (
-    <div className="absolute left-2 top-2 hidden h-12 items-center rounded px-1.5 shadow-md md:flex">
+    <div className="absolute left-2 top-2 z-50 hidden h-12 items-center rounded px-1.5 shadow-md md:flex">
       <Hint label="Back to dashboard" side="bottom" sideOffset={10}>
         <Button asChild variant="board" className="px-2">
-          <Link href="/">
+          <Link href="/dashboard">
             <Image
               src={
                 resolvedTheme === "dark" ? "/dark-logo.svg" : "/light-logo.svg"

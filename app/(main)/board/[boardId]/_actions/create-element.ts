@@ -10,6 +10,7 @@ const generator = rough.generator();
  *
  */
 export const createElement = ({
+  id,
   x1,
   y1,
   x2,
@@ -71,5 +72,17 @@ export const createElement = ({
       break;
   }
 
-  return { x1, y1, x2, y2, roughElement, elementType };
+  return {
+    id,
+    x1,
+    y1,
+    x2,
+    y2,
+    roughElement,
+    elementType,
+    roughness,
+    fillStyle,
+    stroke,
+    fill,
+  };
 };
