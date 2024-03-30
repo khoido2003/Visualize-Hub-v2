@@ -19,7 +19,7 @@ interface ToolbarProps {
 
 export const Toolbar = ({ setElementType, elementType }: ToolbarProps) => {
   return (
-    <div className="absolute left-0 right-0 top-2 z-50 ml-auto mr-auto  flex h-12 w-[360px] items-center gap-1 rounded-md px-1.5 shadow-md">
+    <div className="absolute left-0 right-0 top-2 z-50 ml-auto mr-auto flex h-12 w-[360px] items-center gap-1 rounded-md px-1.5 shadow-md">
       <Button
         className={cn("", elementType === ElementType.None && "bg-blue-500/20")}
         onClick={() => {

@@ -10,10 +10,10 @@ export const Logo = ({ isLanding }: { isLanding: boolean }) => {
             width={50}
             height={50}
             alt="Logo"
-            className=" sm:w-[50px] w-[30px] sm:h-[50px] h-[30px]"
+            className="h-[30px] w-[30px] sm:h-[50px] sm:w-[50px]"
           />
 
-          <span className="hidden sm:block font-semibold text-lg text-black">
+          <span className="hidden text-lg font-semibold text-black sm:block">
             VisualizeHub
           </span>
         </div>
@@ -24,7 +24,7 @@ export const Logo = ({ isLanding }: { isLanding: boolean }) => {
             alt="Logo"
             width={50}
             height={50}
-            className="dark:block hidden sm:w-[50px] w-[30px] sm:h-[50px] h-[30px]"
+            className="hidden h-[30px] w-[30px] dark:block sm:h-[50px] sm:w-[50px]"
           />
 
           <Image
@@ -32,10 +32,10 @@ export const Logo = ({ isLanding }: { isLanding: boolean }) => {
             width={50}
             height={50}
             alt="Logo"
-            className="dark:hidden sm:w-[50px] w-[30px] sm:h-[50px] h-[30px]"
+            className="h-[30px] w-[30px] dark:hidden sm:h-[50px] sm:w-[50px]"
           />
 
-          <span className="hidden sm:block font-semibold text-lg">
+          <span className="hidden text-lg font-semibold sm:block">
             VisualizeHub
           </span>
         </div>

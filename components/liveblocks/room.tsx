@@ -4,6 +4,7 @@ import { RoomProvider } from "@/liveblocks.config";
 import { LiveList } from "@liveblocks/client";
 import { ClientSideSuspense } from "@liveblocks/react";
 import { ReactNode } from "react";
+import { Loading } from "./loading-room/loading";
 
 interface RoomProps {
   children: ReactNode;
@@ -18,7 +19,7 @@ export const Room = ({ children, roomId }: RoomProps) => {
       initialStorage={{ layers: new LiveList() }}
       initialPresence={{ cursor: null }}
     >
-      <ClientSideSuspense fallback={<div>Loading...</div>}>
+      <ClientSideSuspense fallback={<Loading />}>
         {() => children}
       </ClientSideSuspense>
     </RoomProvider>

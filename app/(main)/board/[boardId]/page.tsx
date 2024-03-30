@@ -1,5 +1,6 @@
 import { Room } from "@/components/liveblocks/room";
 import { Canvas } from "./_components/canvas";
+import { Loading } from "@/components/liveblocks/loading-room/loading";
 
 interface BoardIdPageProps {
   params: {
