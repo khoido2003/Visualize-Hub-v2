@@ -3,7 +3,12 @@
 import rough from "roughjs";
 import { throttle } from "lodash";
 
-import { CanvasElement, ElementType, ToolOptionsType } from "@/types/canvas";
+import {
+  CanvasElement,
+  ElementType,
+  LayersType,
+  ToolOptionsType,
+} from "@/types/canvas";
 
 import { useMutation, useMyPresence, useStorage } from "@/liveblocks.config";
 import { useEffect, useLayoutEffect, useState } from "react";
@@ -22,10 +27,22 @@ export interface CanvasProps {
   boardId: string;
 }
 
-// Helper function
-function renderCanvas() {
+// Implement double buffering to avoid flickering issues when create new element on the canvas:
+// The mechanism is create an offscreen canvas to render the element first, then re-render the element back to the original canvas
+
+// Create an off-screen canvas (back buffer)
+const offscreenCanvas = document.createElement("canvas");
+const offscreenContext = offscreenCanvas.getContext("2d");
+
+// Helper function: Render the display canvas on the screen
+function renderCanvas(
+  layers: readonly LayersType[],
+  resolvedTheme: string | undefined,
+) {
   // Setup the canvas
   const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
+  offscreenCanvas.width = canvas.width;
+  offscreenCanvas.height = canvas.height;
 
   // representing a two-dimensional rendering context.
   const context = canvas!.getContext("2d");
@@ -36,9 +53,46 @@ function renderCanvas() {
   // Linking roughjs to html canvas
   const roughCanvas = rough.canvas(canvas!);
 
+  // Draw all elements onto the off-screen canvas
+  offscreenContext!.clearRect(
+    0,
+    0,
+    offscreenCanvas.width,
+    offscreenCanvas.height,
+  );
+
+  const roughOffscreenCanvas = rough.canvas(offscreenCanvas);
+
+  layers.forEach((layer, index) => {
+    // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
+    if (
+      resolvedTheme === "dark" &&
+      // @ts-ignore
+      layer.roughElement!.options.stroke === "#000"
+    ) {
+      // @ts-ignore
+      layer.roughElement!.options.stroke = "#fff";
+    }
+
+    if (
+      resolvedTheme !== "dark" &&
+      // @ts-ignore
+      layer.roughElement!.options.stroke === "#fff"
+    ) {
+      // @ts-ignore
+      layer.roughElement!.options.stroke = "#000";
+    }
+    // @ts-ignore
+    roughOffscreenCanvas.draw(layer.roughElement!);
+  });
+
+  // Copy the content of the off-screen canvas onto the visible canvas
+  context?.drawImage(offscreenCanvas, 0, 0);
+
   return roughCanvas;
 }
 
+////////////////////////////////
 ////////////////////////////////
 
 // MAIN COMPONENT
@@ -101,34 +155,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     // Call updateCanvasSize initially to set the canvas size
     updateCanvasSize();
 
-    // Render the canvas
-    const roughCanvas = renderCanvas();
-
-    // Render all the elements inside the layers
-    layers.forEach((layer, index) => {
-      // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
-      if (
-        resolvedTheme === "dark" &&
-        // @ts-ignore
-        layer.roughElement!.options.stroke === "#000"
-      ) {
-        // @ts-ignore
-        layer.roughElement!.options.stroke = "#fff";
-      }
-
-      if (
-        resolvedTheme !== "dark" &&
-        // @ts-ignore
-        layer.roughElement!.options.stroke === "#fff"
-      ) {
-        // @ts-ignore
-        layer.roughElement!.options.stroke = "#000";
-      }
-      // @ts-ignore
-      roughCanvas.draw(layer.roughElement!);
-
-      // console.log(index + " ", { ...layer });
-    });
+    // Render the canvas and all the elements
+    renderCanvas(layers, resolvedTheme);
 
     // Remove event listener on component unmount
     return () => {
@@ -138,16 +166,11 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   // -------------------------------------------
 
+  // Update the canvas when the canvas layer has new elements
   useEffect(() => {
     // Render the canvas
-    const roughCanvas = renderCanvas();
-
-    layers.forEach((layer, index) => {
-      // @ts-ignore
-      roughCanvas.draw(layer.roughElement!); // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
-
-      // console.log(index + " ", { ...layer });
-    });
+    renderCanvas(layers, resolvedTheme);
+    console.log(layers);
   }, [layers]);
 
   //-----------------------------------------
@@ -288,7 +311,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     else {
       // Set the id for the new created element
       const id = layers.length - 1;
-      console.log(id);
+      // console.log(id);
 
       // Add the new element to the layers array
       const element = createElement({
