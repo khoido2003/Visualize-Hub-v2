@@ -73,3 +73,13 @@ export interface LayersType {
   readonly roughness?: number;
   readonly stroke?: string;
 }
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface SelectionNet {
+  origin?: Point;
+  current?: Point;
+}
