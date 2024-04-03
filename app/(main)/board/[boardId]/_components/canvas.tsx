@@ -25,6 +25,7 @@ import { Participants } from "./participants-display/participants";
 import { ToolOptions } from "./tool-options";
 import { useTheme } from "next-themes";
 import { getElementAtPosition } from "../_actions/get-element-at-position";
+import { findIntersectingLayers } from "@/utils/find-intersecting-layers";
 export interface CanvasProps {
   boardId: string;
 }
@@ -41,9 +42,10 @@ function renderCanvas(
   layers: readonly LayersType[],
   resolvedTheme: string | undefined,
   selectionNet: SelectionNet | undefined,
+  selectedElement: CanvasElement | null,
 ) {
-  // Setup the canvas
   const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
+  // Setup the canvas
   offscreenCanvas.width = canvas.width;
   offscreenCanvas.height = canvas.height;
 
@@ -66,7 +68,7 @@ function renderCanvas(
 
   const roughOffscreenCanvas = rough.canvas(offscreenCanvas);
 
-  // Inside the renderCanvas function
+  // Render the section net to select multiple elements
   if (selectionNet && selectionNet.current) {
     const { origin, current } = selectionNet;
     const { x: originX, y: originY } = origin!;
@@ -88,6 +90,24 @@ function renderCanvas(
     context!.fillRect(minX, minY, width, height);
   }
 
+  // Render the bounding box for single element
+  if (selectedElement) {
+    const { x1, x2, y1, y2 } = selectedElement;
+    const minX = Math.min(x1, x2) - 10;
+    const minY = Math.min(y1, y2) - 10;
+    const width = Math.abs(x2 - x1) + 20;
+    const height = Math.abs(y2 - y1) + 20;
+
+    context!.strokeStyle = "#3b82f6"; // Set your desired border color
+    context!.lineWidth = 1; // Set your desired border thickness
+
+    // Draw stroked rectangle (border)
+    context!.strokeRect(minX, minY, width, height);
+
+    context!.rect(minX, minY, width, height);
+  }
+
+  // Render the elements store inside liveblocks to the canvas
   layers.forEach((layer, index) => {
     // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
     if (
@@ -146,9 +166,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const layers = useStorage((root) => root.layers);
 
   // Select element type
-  const [elementType, setElementType] = useState<ElementType>(
-    ElementType.Rectangle,
-  );
+  const [elementType, setElementType] = useState<ElementType>(ElementType.None);
 
   // Check if drawing or moving or none
   const [action, setAction] = useState<
@@ -186,22 +204,29 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     updateCanvasSize();
 
     // Render the canvas and all the elements
-    renderCanvas(layers, resolvedTheme, selectionNet);
+    renderCanvas(layers, resolvedTheme, selectionNet, selectedElement);
 
     // Remove event listener on component unmount
     return () => {
       window.removeEventListener("resize", updateCanvasSize);
     };
-  }, [layers, innerHeight, innerWidth, resolvedTheme, selectionNet]);
+  }, [
+    layers,
+    innerHeight,
+    innerWidth,
+    resolvedTheme,
+    selectionNet,
+    selectedElement,
+  ]);
 
   // -------------------------------------------
 
   // Update the canvas when the canvas layer has new elements
   useEffect(() => {
     // Render the canvas
-    renderCanvas(layers, resolvedTheme, selectionNet);
+    renderCanvas(layers, resolvedTheme, selectionNet, selectedElement);
     console.log(layers);
-  }, [layers, resolvedTheme, selectionNet]);
+  }, [layers, resolvedTheme, selectionNet, selectedElement]);
 
   //-----------------------------------------
 
@@ -294,7 +319,10 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         //   break;
         case "z":
           if (e.ctrlKey || e.metaKey) {
-            if (layers.length > 0) deleteLayers();
+            if (layers.length > 0) {
+              deleteLayers();
+              setSelectedElement(null);
+            }
             break;
           }
       }
@@ -327,6 +355,12 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const updateSelectionNet = (current: Point, origin: Point) => {
     setAction("select");
     setSelectionNet({ current, origin });
+    const elementsIntersectionArr = findIntersectingLayers({
+      current,
+      origin,
+      layers,
+    });
+    console.log(elementsIntersectionArr);
   };
 
   //- ----------------------------------------------------
@@ -340,24 +374,27 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
     // Find the element that going to be selected
     if (elementType === "none") {
+      // Check if the mouse is clicking
       setAction("pressing");
+
+      // Create selection net
       setSelectionNet({
         origin: { x: clientX, y: clientY },
         current: { x: clientX, y: clientY },
       });
-      console.log(selectionNet);
 
-      // const element = getElementAtPosition(clientX, clientY, layers);
-      // // If the element is existing
-      // if (element) {
-      //   // Calculate the distance between the mouse to the coordinates of the element so we can uuse it later to calcualte the new position of the element.
-      //   const offsetX = clientX - element.x1;
-      //   const offsetY = clientY - element.y1;
-      //   // Store the selected element
-      //   setSelectedElement({ ...element, offsetX, offsetY });
-      //   // Change action to moving
-      //   setAction("moving");
-      // }
+      // If the cursor is on an element then change the action to moving and not create a selection net
+      const element = getElementAtPosition(clientX, clientY, layers);
+      // If the element is existing
+      if (element) {
+        // Calculate the distance between the mouse to the coordinates of the element so we can uuse it later to calcualte the new position of the element.
+        const offsetX = clientX - element.x1;
+        const offsetY = clientY - element.y1;
+        // Store the selected element
+        setSelectedElement({ ...element, offsetX, offsetY });
+        // Change action to moving
+        setAction("moving");
+      }
     }
     // Or create a new element
     else {
@@ -428,6 +465,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
           const newY1 = clientY - offsetY!;
 
           updateElement(id!, newX1, newY1, newX1 + width, newY1 + height);
+
           break;
 
         case "pressing":
@@ -441,7 +479,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
             { x: clientX, y: clientY },
             { x: selectionNet!.origin!.x, y: selectionNet!.origin!.y },
           );
-          console.log(selectionNet);
+
           break;
         default:
           break;
@@ -457,9 +495,20 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const handleMouseUp = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
+    const { clientX, clientY } = event;
     setAction("none");
-    setSelectedElement(null);
+
     setSelectionNet(undefined);
+
+    // If the cursor is on an element then change the action to moving and not create a selection net
+    const element = getElementAtPosition(clientX, clientY, layers);
+    // If the element is existing
+    if (element) {
+      // Store the selected element
+      setSelectedElement({ ...element });
+    } else {
+      setSelectedElement(null);
+    }
   };
 
   // --------------------------------------------
@@ -498,17 +547,6 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
       {/* Tool options */}
       <ToolOptions setToolOptions={setToolOptions} toolOptions={toolOptions} />
-
-      {/* Selection Net */}
-      {action === "select" && selectionNet?.current !== null && (
-        <rect
-          className="fill-blue-500/5 stroke-blue-500 stroke-1"
-          x={Math.min(selectionNet!.origin!.x, selectionNet!.current!.x)}
-          y={Math.min(selectionNet!.origin!.y, selectionNet!.current!.y)}
-          width={Math.abs(selectionNet!.origin!.x - selectionNet!.current!.x)}
-          height={Math.abs(selectionNet!.origin!.y - selectionNet!.current!.y)}
-        />
-      )}
 
       {/* Canvas */}
       <canvas
