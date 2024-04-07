@@ -201,7 +201,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   // Check if drawing or moving or none
   const [action, setAction] = useState<
-    "moving" | "drawing" | "none" | "select" | "pressing"
+    "moving" | "drawing" | "none" | "select" | "pressing" | "moving-multiple"
   >("none");
 
   // Check the current element being selected
@@ -209,6 +209,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     null,
   );
 
+  // Handle selection net to choose multiple elements
   const bounds = useSelectionBounds();
 
   // ----------------------------------------
@@ -259,7 +260,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   useEffect(() => {
     // Render the canvas
     renderCanvas(layers, resolvedTheme, selectionNet, selectedElement, bounds);
-    console.log(layers);
+    // console.log(layers);
   }, [layers, resolvedTheme, selectionNet, selectedElement, bounds]);
 
   //-----------------------------------------
@@ -397,6 +398,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         layers,
       });
 
+      // Add al the selected layers to the list of layers in presence
       setMyPresence({ selectionLayers: elementsIntersectionArr });
     },
     [layers],
@@ -408,6 +410,43 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       setMyPresence({ selectionLayers: [] }, { addToHistory: true });
     }
   }, []);
+
+  // Move multiple selection layers
+  const translateSelectedLayers = useMutation(
+    ({ storage, self }, clientX: number, clientY: number) => {
+      const offsetX = clientX - bounds!.x;
+      const offsetY = clientY - bounds!.y;
+
+      for (let i = 0; i < self.presence.selectionLayers.length; i++) {
+        const element = createElement({
+          ...self.presence.selectionLayers[i],
+          x1: self.presence.selectionLayers[i].x1 + offsetX,
+          y1: self.presence.selectionLayers[i].y1 + offsetY,
+          x2:
+            self.presence.selectionLayers[i].x1 +
+            offsetX +
+            (self.presence.selectionLayers[i].x2 -
+              self.presence.selectionLayers[i].x1),
+          y2:
+            self.presence.selectionLayers[i].y1 +
+            offsetY +
+            (self.presence.selectionLayers[i].y2 -
+              self.presence.selectionLayers[i].y1),
+        }) as CanvasElement;
+
+        // Update the bounds of the element
+        self.presence.selectionLayers[i] = element;
+
+        const liveLayers = storage.get("layers");
+        const updatedElement = new LiveObject(element);
+        liveLayers.set(
+          (self!.presence!.selectionLayers[i]!.id as number) + 1,
+          updatedElement,
+        );
+      }
+    },
+    [action, bounds, layers],
+  );
 
   //- ----------------------------------------------------
 
@@ -423,8 +462,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // Check if the mouse is clicking
       setAction("pressing");
 
-      // UnSelect the multiple element
-      unSelectedLayers();
+      // // UnSelect the multiple element
+      // unSelectedLayers();
 
       // Create selection net
       setSelectionNet({
@@ -432,17 +471,32 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         current: { x: clientX, y: clientY },
       });
 
+      if (bounds) {
+        if (
+          clientX > bounds.x &&
+          clientX < bounds.width + bounds.x &&
+          clientY > bounds.y &&
+          clientY < bounds.y + bounds.height
+        ) {
+          translateSelectedLayers(clientX, clientY);
+          setAction("moving-multiple");
+        }
+      }
+
       // If the cursor is on an element then change the action to moving and not create a selection net
       const element = getElementAtPosition(clientX, clientY, layers);
+
       // If the element is existing
       if (element) {
-        // Calculate the distance between the mouse to the coordinates of the element so we can uuse it later to calcualte the new position of the element.
-        const offsetX = clientX - element.x1;
-        const offsetY = clientY - element.y1;
-        // Store the selected element
-        setSelectedElement({ ...element, offsetX, offsetY });
-        // Change action to moving
-        setAction("moving");
+        if (!bounds) {
+          // Calculate the distance between the mouse to the coordinates of the element so we can uuse it later to calcualte the new position of the element.
+          const offsetX = clientX - element.x1;
+          const offsetY = clientY - element.y1;
+          // Store the selected element
+          setSelectedElement({ ...element, offsetX, offsetY });
+          // Change action to moving
+          setAction("moving");
+        } else return;
       }
     }
     // Or create a new element
@@ -496,6 +550,17 @@ export const Canvas = ({ boardId }: CanvasProps) => {
           : "default";
       }
 
+      if (bounds && elementType === "none") {
+        if (
+          clientX > bounds.x &&
+          clientX < bounds.width + bounds.x &&
+          clientY > bounds.y &&
+          clientY < bounds.y + bounds.height
+        ) {
+          document.body.style.cursor = "move";
+        }
+      }
+
       // Handle create or move element base on the current action
       switch (action) {
         case "drawing":
@@ -515,6 +580,10 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
           updateElement(id!, newX1, newY1, newX1 + width, newY1 + height);
 
+          break;
+
+        case "moving-multiple":
+          translateSelectedLayers(clientX, clientY);
           break;
 
         case "pressing":
@@ -561,10 +630,12 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     const element = getElementAtPosition(clientX, clientY, layers);
     // If the element is existing
     if (element) {
-      // Unselect multiple elements
-      unSelectedLayers();
-      // Store the selected element
-      setSelectedElement({ ...element });
+      if (myPresence.selectionLayers.length === 0) {
+        // Store the selected element
+        setSelectedElement({ ...element });
+        // Unselect multiple elements
+        unSelectedLayers();
+      }
     } else {
       setSelectedElement(null);
     }
