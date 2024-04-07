@@ -52,6 +52,7 @@ export interface ToolOptionsType {
 }
 
 export interface LayersType {
+  readonly id?: number;
   readonly x1: number;
   readonly y1: number;
   readonly x2: number;

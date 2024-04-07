@@ -26,6 +26,7 @@ import { ToolOptions } from "./tool-options";
 import { useTheme } from "next-themes";
 import { getElementAtPosition } from "../_actions/get-element-at-position";
 import { findIntersectingLayers } from "@/utils/find-intersecting-layers";
+import { useSelectionBounds } from "@/hooks/use-selection-bounds";
 export interface CanvasProps {
   boardId: string;
 }
@@ -43,6 +44,12 @@ function renderCanvas(
   resolvedTheme: string | undefined,
   selectionNet: SelectionNet | undefined,
   selectedElement: CanvasElement | null,
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null,
 ) {
   const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
   // Setup the canvas
@@ -107,6 +114,29 @@ function renderCanvas(
     context!.rect(minX, minY, width, height);
   }
 
+  // Select multiple
+  if (bounds) {
+    context!.strokeStyle = "#3b82f6"; // Set your desired border color
+    context!.lineWidth = 2; // Set your desired border thickness
+
+    // Draw stroked rectangle (border)
+    context!.strokeRect(
+      bounds.x - 10,
+      bounds.y - 10,
+      bounds.width + 20,
+      bounds.height + 20,
+    );
+
+    context!.fillStyle = "#3b83f63b"; // Set your desired fill color
+    // Fill the rectangle
+    context!.fillRect(
+      bounds.x - 10,
+      bounds.y - 10,
+      bounds.width + 20,
+      bounds.height + 20,
+    );
+  }
+
   // Render the elements store inside liveblocks to the canvas
   layers.forEach((layer, index) => {
     // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
@@ -127,6 +157,7 @@ function renderCanvas(
       // @ts-ignore
       layer.roughElement!.options.stroke = "#000";
     }
+
     // @ts-ignore
     roughOffscreenCanvas.draw(layer.roughElement!);
   });
@@ -178,6 +209,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     null,
   );
 
+  const bounds = useSelectionBounds();
+
   // ----------------------------------------
 
   // These two state just to keep the canvas re-rendering when we change the window size
@@ -204,7 +237,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     updateCanvasSize();
 
     // Render the canvas and all the elements
-    renderCanvas(layers, resolvedTheme, selectionNet, selectedElement);
+    renderCanvas(layers, resolvedTheme, selectionNet, selectedElement, bounds);
 
     // Remove event listener on component unmount
     return () => {
@@ -217,6 +250,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     resolvedTheme,
     selectionNet,
     selectedElement,
+    bounds,
   ]);
 
   // -------------------------------------------
@@ -224,9 +258,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   // Update the canvas when the canvas layer has new elements
   useEffect(() => {
     // Render the canvas
-    renderCanvas(layers, resolvedTheme, selectionNet, selectedElement);
+    renderCanvas(layers, resolvedTheme, selectionNet, selectedElement, bounds);
     console.log(layers);
-  }, [layers, resolvedTheme, selectionNet, selectedElement]);
+  }, [layers, resolvedTheme, selectionNet, selectedElement, bounds]);
 
   //-----------------------------------------
 
@@ -303,6 +337,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // Create the new state of the element
       const updatedElement = new LiveObject(element);
 
+      // Move the element to the the new position
       // Update the new height and width of the element by overwrite it with the new value
       liveLayers.set(index, updatedElement);
     },
@@ -352,16 +387,27 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   );
 
   // Update the selection net while dragging
-  const updateSelectionNet = (current: Point, origin: Point) => {
-    setAction("select");
-    setSelectionNet({ current, origin });
-    const elementsIntersectionArr = findIntersectingLayers({
-      current,
-      origin,
-      layers,
-    });
-    console.log(elementsIntersectionArr);
-  };
+  const updateSelectionNet = useMutation(
+    ({ storage, setMyPresence }, current: Point, origin: Point) => {
+      setAction("select");
+      setSelectionNet({ current, origin });
+      const elementsIntersectionArr = findIntersectingLayers({
+        current,
+        origin,
+        layers,
+      });
+
+      setMyPresence({ selectionLayers: elementsIntersectionArr });
+    },
+    [layers],
+  );
+
+  // Unselected layers when mouse up
+  const unSelectedLayers = useMutation(({ self, setMyPresence }) => {
+    if (self.presence.selectionLayers.length > 0) {
+      setMyPresence({ selectionLayers: [] }, { addToHistory: true });
+    }
+  }, []);
 
   //- ----------------------------------------------------
 
@@ -376,6 +422,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     if (elementType === "none") {
       // Check if the mouse is clicking
       setAction("pressing");
+
+      // UnSelect the multiple element
+      unSelectedLayers();
 
       // Create selection net
       setSelectionNet({
@@ -474,6 +523,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
             { x: selectionNet!.origin!.x, y: selectionNet!.origin!.y },
           );
           break;
+
         case "select":
           updateSelectionNet(
             { x: clientX, y: clientY },
@@ -500,10 +550,19 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
     setSelectionNet(undefined);
 
+    // Unselect multiple elements
+    if (
+      elementType === ElementType.None &&
+      (action === "pressing" || action === "none")
+    ) {
+      unSelectedLayers();
+    }
     // If the cursor is on an element then change the action to moving and not create a selection net
     const element = getElementAtPosition(clientX, clientY, layers);
     // If the element is existing
     if (element) {
+      // Unselect multiple elements
+      unSelectedLayers();
       // Store the selected element
       setSelectedElement({ ...element });
     } else {
