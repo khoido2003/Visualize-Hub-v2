@@ -8,7 +8,7 @@ import { ToolbarSkeleton } from "./toolbar-skeleton";
 
 export const Loading = () => {
   return (
-    <div className="relative h-full w-full bg-light_bg">
+    <div className="relative h-full w-full bg-light_bg dark:bg-black">
       <ToolbarSkeleton />
       <InfoLoading />
       <ParticipantLoading />

@@ -99,7 +99,7 @@ function renderCanvas(
     const height = Math.abs(y2 - y1) + 20;
 
     context!.strokeStyle = "#3b82f6"; // Set your desired border color
-    context!.lineWidth = 1; // Set your desired border thickness
+    context!.lineWidth = 2; // Set your desired border thickness
 
     // Draw stroked rectangle (border)
     context!.strokeRect(minX, minY, width, height);
@@ -153,7 +153,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     stroke: resolvedTheme === "dark" ? "#fff" : "#000",
     roughness: 0,
     fill: "",
-    fillStyle: "",
+    fillStyle: "hachure",
   });
 
   // Cusror presence

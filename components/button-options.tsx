@@ -18,7 +18,7 @@ export const ButtonOptions = ({
     <button
       onClick={handleAction}
       className={cn(
-        "relative h-7 w-7 rounded-md border-2 border-black/20 hover:border-black",
+        "relative h-7 w-7 rounded-md border-2 border-black/20 hover:border-black dark:border-white/20 dark:hover:border-white",
         options,
       )}
     >

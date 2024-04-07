@@ -46,7 +46,7 @@ export const ToolOptions = ({
   };
 
   return (
-    <div className="absolute bottom-0 left-2 top-0 z-50 mb-auto mt-auto h-[500px] w-[230px] rounded-md border-[1px] border-slate-200 p-4 shadow-md">
+    <div className="absolute bottom-0 left-2 top-0 z-50 mb-auto mt-auto h-[500px] w-[230px] rounded-md border-[1px] border-slate-200 p-4 shadow-md dark:bg-gray-100/5">
       {/* Stroke options */}
       <p className="pl-2 text-xs">Stroke</p>
       <div className="flex gap-1 p-2">
@@ -58,7 +58,7 @@ export const ToolOptions = ({
           }
           options={
             (toolOptions.stroke === "#fff" || toolOptions.stroke === "#000") &&
-            "border-black"
+            (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
           }
         />
 
@@ -68,7 +68,10 @@ export const ToolOptions = ({
           handleAction={() => {
             handleStrokeColor("#DC2626");
           }}
-          options={toolOptions.stroke === "#DC2626" && "border-black"}
+          options={
+            toolOptions.stroke === "#DC2626" &&
+            (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+          }
         />
 
         {/* Orange */}
@@ -77,7 +80,10 @@ export const ToolOptions = ({
           handleAction={() => {
             handleStrokeColor("#D97706");
           }}
-          options={toolOptions.stroke === "#D97706" && "border-black"}
+          options={
+            toolOptions.stroke === "#D97706" &&
+            (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+          }
         />
 
         {/* Green */}
@@ -86,7 +92,10 @@ export const ToolOptions = ({
           handleAction={() => {
             handleStrokeColor("#059669");
           }}
-          options={toolOptions.stroke === "#059669" && "border-black"}
+          options={
+            toolOptions.stroke === "#059669" &&
+            (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+          }
         />
 
         {/* Violet */}
@@ -95,7 +104,10 @@ export const ToolOptions = ({
           handleAction={() => {
             handleStrokeColor("#7C3AED");
           }}
-          options={toolOptions.stroke === "#7C3AED" && "border-black"}
+          options={
+            toolOptions.stroke === "#7C3AED" &&
+            (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+          }
         />
 
         {/* Pink */}
@@ -104,7 +116,10 @@ export const ToolOptions = ({
           handleAction={() => {
             handleStrokeColor("#DB2777");
           }}
-          options={toolOptions.stroke === "#DB2777" && "border-black"}
+          options={
+            toolOptions.stroke === "#DB2777" &&
+            (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+          }
         />
       </div>
 
@@ -116,26 +131,36 @@ export const ToolOptions = ({
         <div className="flex gap-1 p-2">
           {/* No color */}
           <ButtonOptions
-            children={<Ban className="h-4 w-4" />}
             handleAction={() => {
               handleFillColor("");
             }}
-            options={toolOptions.fill === "" && "border-black"}
-          />
+            options={
+              toolOptions.fill === "" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
+          >
+            <Ban className="h-4 w-4" />
+          </ButtonOptions>
 
           <ButtonOptions
             backgroundOptions={"bg-[#FFC9C9]"}
             handleAction={() => {
               handleFillColor("#FFC9C9");
             }}
-            options={toolOptions.fill === "#FFC9C9" && "border-black"}
+            options={
+              toolOptions.fill === "#FFC9C9" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
           />
           <ButtonOptions
             backgroundOptions={"bg-[#B2F2BB]"}
             handleAction={() => {
               handleFillColor("#B2F2BB");
             }}
-            options={toolOptions.fill === "#B2F2BB" && "border-black"}
+            options={
+              toolOptions.fill === "#B2F2BB" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
           />
 
           <ButtonOptions
@@ -143,7 +168,10 @@ export const ToolOptions = ({
             handleAction={() => {
               handleFillColor("#A5D8FF");
             }}
-            options={toolOptions.fill === "#A5D8FF" && "border-black"}
+            options={
+              toolOptions.fill === "#A5D8FF" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
           />
 
           <ButtonOptions
@@ -151,7 +179,10 @@ export const ToolOptions = ({
             handleAction={() => {
               handleFillColor("#FFEC99");
             }}
-            options={toolOptions.fill === "#FFEC99" && "border-black"}
+            options={
+              toolOptions.fill === "#FFEC99" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
           />
 
           <ButtonOptions
@@ -159,7 +190,10 @@ export const ToolOptions = ({
             handleAction={() => {
               handleFillColor("#DB2777");
             }}
-            options={toolOptions.fill === "#DB2777" && "border-black"}
+            options={
+              toolOptions.fill === "#DB2777" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
           />
         </div>
       </div>
@@ -175,45 +209,65 @@ export const ToolOptions = ({
             handleAction={() => {
               handleFillStyle("hachure");
             }}
-            options={toolOptions.fillStyle === "hachure" && "border-black"}
-            children={<HachureIcon />}
-          />
+            options={
+              toolOptions.fillStyle === "hachure" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
+          >
+            <HachureIcon />
+          </ButtonOptions>
 
           {/* Solid */}
           <ButtonOptions
             handleAction={() => {
               handleFillStyle("solid");
             }}
-            options={toolOptions.fillStyle === "solid" && "border-black"}
-            children={<SolidIcon />}
-          />
+            options={
+              toolOptions.fillStyle === "solid" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
+          >
+            <SolidIcon />
+          </ButtonOptions>
 
           {/* Zig-zag */}
           <ButtonOptions
             handleAction={() => {
               handleFillStyle("zigzag-line");
             }}
-            options={toolOptions.fillStyle === "zigzag-line" && "border-black"}
-            children={<ZigzagIcon />}
-          />
+            options={
+              toolOptions.fillStyle === "zigzag-line" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
+          >
+            <ZigzagIcon />
+          </ButtonOptions>
 
           {/* cross-hatch */}
           <ButtonOptions
             handleAction={() => {
               handleFillStyle("cross-hatch");
             }}
-            options={toolOptions.fillStyle === "cross-hatch" && "border-black"}
-            children={<Hash className="h-4 w-4" />}
-          />
+            options={
+              toolOptions.fillStyle === "cross-hatch" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
+          >
+            <Hash className="h-4 w-4" />
+          </ButtonOptions>
 
           {/* dots */}
           <ButtonOptions
             handleAction={() => {
               handleFillStyle("dashed");
             }}
-            options={toolOptions.fillStyle === "dashed" && "border-black"}
-            children={<Dot className="h-11 w-11" />}
-          />
+            options={
+              toolOptions.fillStyle === "dashed" &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
+          >
+            <Dot className="h-11 w-11" />
+          </ButtonOptions>
         </div>
       </div>
 
@@ -227,25 +281,37 @@ export const ToolOptions = ({
             handleAction={() => {
               handleRoughness(0);
             }}
-            options={toolOptions.roughness === 0 && "border-black"}
-            children={<NoSloppy />}
-          />
+            options={
+              toolOptions.roughness === 0 &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
+          >
+            <NoSloppy />
+          </ButtonOptions>
 
           <ButtonOptions
             handleAction={() => {
               handleRoughness(2);
             }}
-            options={toolOptions.roughness === 2 && "border-black"}
-            children={<MediumSloppy />}
-          />
+            options={
+              toolOptions.roughness === 2 &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
+          >
+            <MediumSloppy />
+          </ButtonOptions>
 
           <ButtonOptions
             handleAction={() => {
               handleRoughness(3);
             }}
-            options={toolOptions.roughness === 3 && "border-black"}
-            children={<ExtraSloppy />}
-          />
+            options={
+              toolOptions.roughness === 3 &&
+              (resolvedTheme === "dark" ? "dark:border-white" : "border-black")
+            }
+          >
+            <ExtraSloppy />
+          </ButtonOptions>
         </div>
       </div>
     </div>
