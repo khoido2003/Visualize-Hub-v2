@@ -28,11 +28,16 @@ const boundingBox = (layers: readonly LayersType[]) => {
     }
   }
 
+  const centerX = (left + right) / 2;
+  const centerY = (top + bottom) / 2;
+
   return {
     x: left,
     y: top,
     width: right - left,
     height: bottom - top,
+    centerX,
+    centerY,
   };
 };
 

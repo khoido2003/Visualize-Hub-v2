@@ -158,8 +158,10 @@ function renderCanvas(
       layer.roughElement!.options.stroke = "#000";
     }
 
-    // @ts-ignore
-    roughOffscreenCanvas.draw(layer.roughElement!);
+    if (layer.id === index - 1) {
+      // @ts-ignore
+      roughOffscreenCanvas.draw(layer.roughElement!);
+    }
   });
 
   // Copy the content of the off-screen canvas onto the visible canvas
@@ -260,7 +262,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   useEffect(() => {
     // Render the canvas
     renderCanvas(layers, resolvedTheme, selectionNet, selectedElement, bounds);
-    // console.log(layers);
+    console.log(layers);
   }, [layers, resolvedTheme, selectionNet, selectedElement, bounds]);
 
   //-----------------------------------------
@@ -289,7 +291,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // The current list of elements
       const liveLayers = storage.get("layers");
 
-      let index;
+      let index: number;
       let element;
       // Get the postion of the curent element inside the layers
       // Because the Id is always smaller than its index 1 so we have to plus 1 to id to get the current index of the element.
@@ -414,8 +416,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   // Move multiple selection layers
   const translateSelectedLayers = useMutation(
     ({ storage, self }, clientX: number, clientY: number) => {
-      const offsetX = clientX - bounds!.x;
-      const offsetY = clientY - bounds!.y;
+      const offsetX = clientX - bounds!.centerX;
+      const offsetY = clientY - bounds!.centerY;
 
       for (let i = 0; i < self.presence.selectionLayers.length; i++) {
         const element = createElement({
