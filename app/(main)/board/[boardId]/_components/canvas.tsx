@@ -203,7 +203,13 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   // Check if drawing or moving or none
   const [action, setAction] = useState<
-    "moving" | "drawing" | "none" | "select" | "pressing" | "moving-multiple"
+    | "moving"
+    | "drawing"
+    | "none"
+    | "select"
+    | "pressing"
+    | "moving-multiple"
+    | "resizing"
   >("none");
 
   // Check the current element being selected
@@ -490,6 +496,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
       // If the element is existing
       if (element) {
+        // If not select multiple
         if (!bounds) {
           // Calculate the distance between the mouse to the coordinates of the element so we can uuse it later to calcualte the new position of the element.
           const offsetX = clientX - element.x1;
@@ -561,6 +568,15 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         ) {
           document.body.style.cursor = "move";
         }
+      }
+
+      if (
+        elementType === ElementType.Circle ||
+        elementType === ElementType.Rectangle ||
+        elementType === ElementType.Line ||
+        elementType === ElementType.Pencil
+      ) {
+        document.body.style.cursor = "crosshair";
       }
 
       // Handle create or move element base on the current action
