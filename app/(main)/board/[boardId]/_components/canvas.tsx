@@ -27,6 +27,9 @@ import { useTheme } from "next-themes";
 import { getElementAtPosition } from "../_actions/get-element-at-position";
 import { findIntersectingLayers } from "@/utils/find-intersecting-layers";
 import { useSelectionBounds } from "@/hooks/use-selection-bounds";
+import { cursorForPosition } from "@/utils/cursor-for-position";
+import { HANDLE_WIDTH } from "@/constants";
+import { resizeCoordinates } from "@/utils/resize-coordinates";
 export interface CanvasProps {
   boardId: string;
 }
@@ -110,8 +113,39 @@ function renderCanvas(
 
     // Draw stroked rectangle (border)
     context!.strokeRect(minX, minY, width, height);
-
     context!.rect(minX, minY, width, height);
+
+    // bound top left
+    context!.strokeRect(
+      minX - HANDLE_WIDTH / 2,
+      minY - HANDLE_WIDTH / 2,
+      HANDLE_WIDTH,
+      HANDLE_WIDTH,
+    );
+
+    // bound top right
+    context!.strokeRect(
+      minX + width - HANDLE_WIDTH / 2,
+      minY - HANDLE_WIDTH / 2,
+      HANDLE_WIDTH,
+      HANDLE_WIDTH,
+    );
+
+    // bound bottom left
+    context!.strokeRect(
+      minX - HANDLE_WIDTH / 2,
+      minY + height - HANDLE_WIDTH / 2,
+      HANDLE_WIDTH,
+      HANDLE_WIDTH,
+    );
+
+    // bound bottom right
+    context!.strokeRect(
+      minX + width - HANDLE_WIDTH / 2,
+      minY + height - HANDLE_WIDTH / 2,
+      HANDLE_WIDTH,
+      HANDLE_WIDTH,
+    );
   }
 
   // Select multiple
@@ -134,6 +168,38 @@ function renderCanvas(
       bounds.y - 10,
       bounds.width + 20,
       bounds.height + 20,
+    );
+
+    // bound top left
+    context!.strokeRect(
+      bounds.x - HANDLE_WIDTH / 2 - 10,
+      bounds.y - HANDLE_WIDTH / 2 - 10,
+      8,
+      8,
+    );
+
+    // bound top right
+    context!.strokeRect(
+      bounds.x + bounds.width + 10 - HANDLE_WIDTH / 2,
+      bounds.y - HANDLE_WIDTH / 2 - 10,
+      8,
+      8,
+    );
+
+    // bound bottom left
+    context!.strokeRect(
+      bounds.x - HANDLE_WIDTH / 2 - 10,
+      bounds.y + bounds.height + 10 - HANDLE_WIDTH / 2,
+      8,
+      8,
+    );
+
+    // bound bottom right
+    context!.strokeRect(
+      bounds.x + bounds.width + 10 - HANDLE_WIDTH / 2,
+      bounds.y + bounds.height + 10 - HANDLE_WIDTH / 2,
+      8,
+      8,
     );
   }
 
@@ -268,7 +334,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   useEffect(() => {
     // Render the canvas
     renderCanvas(layers, resolvedTheme, selectionNet, selectedElement, bounds);
-    console.log(layers);
+    // console.log(layers);
   }, [layers, resolvedTheme, selectionNet, selectedElement, bounds]);
 
   //-----------------------------------------
@@ -287,7 +353,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   const updateElement = useMutation(
     (
-      { storage, setMyPresence },
+      { storage, self },
       id: number | "no-value",
       newX1: number | "no-value",
       newY1: number | "no-value",
@@ -349,6 +415,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // Move the element to the the new position
       // Update the new height and width of the element by overwrite it with the new value
       liveLayers.set(index, updatedElement);
+
+      // console.log(layers);
+      // console.log(liveLayers.toArray());
     },
     [toolOptions, selectedElement, action],
   );
@@ -397,7 +466,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   // Update the selection net while dragging
   const updateSelectionNet = useMutation(
-    ({ storage, setMyPresence }, current: Point, origin: Point) => {
+    ({ storage, setMyPresence, self }, current: Point, origin: Point) => {
       setAction("select");
       setSelectionNet({ current, origin });
       const elementsIntersectionArr = findIntersectingLayers({
@@ -406,10 +475,14 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         layers,
       });
 
+      console.log(layers);
+      // console.log(elementsIntersectionArr);
+      console.log(self.presence.selectionLayers);
+
       // Add al the selected layers to the list of layers in presence
       setMyPresence({ selectionLayers: elementsIntersectionArr });
     },
-    [layers],
+    [layers, action],
   );
 
   // Unselected layers when mouse up
@@ -422,6 +495,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   // Move multiple selection layers
   const translateSelectedLayers = useMutation(
     ({ storage, self }, clientX: number, clientY: number) => {
+      console.log(self.presence.selectionLayers);
+
       const offsetX = clientX - bounds!.centerX;
       const offsetY = clientY - bounds!.centerY;
 
@@ -503,8 +578,13 @@ export const Canvas = ({ boardId }: CanvasProps) => {
           const offsetY = clientY - element.y1;
           // Store the selected element
           setSelectedElement({ ...element, offsetX, offsetY });
-          // Change action to moving
-          setAction("moving");
+
+          // Check if user moving element or resizing element
+          if (element.position === "inside") {
+            setAction("moving");
+          } else {
+            setAction("resizing");
+          }
         } else return;
       }
     }
@@ -550,12 +630,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
       // Update the mouse cursor style by checking if the cursor is inside the element or not
       if (elementType === "none") {
-        document.body.style.cursor = getElementAtPosition(
-          clientX,
-          clientY,
-          layers,
-        )
-          ? "move"
+        const element = getElementAtPosition(clientX, clientY, layers);
+        document.body.style.cursor = element
+          ? cursorForPosition(element.position!)
           : "default";
       }
 
@@ -579,47 +656,84 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         document.body.style.cursor = "crosshair";
       }
 
-      // Handle create or move element base on the current action
-      switch (action) {
-        case "drawing":
-          // Keep the positon, only update the height and width of the element due to the position of the mouse cursor
-          updateElement("no-value", "no-value", "no-value", clientX, clientY);
-          break;
+      //-----------------------------
 
-        case "moving":
-          const { id, x1, y1, x2, y2, offsetX, offsetY, elementType } =
-            selectedElement as CanvasElement;
+      if (action === "drawing") {
+        // Keep the positon, only update the height and width of the element due to the position of the mouse cursor
+        updateElement("no-value", "no-value", "no-value", clientX, clientY);
+      }
 
-          const width = x2 - x1;
-          const height = y2 - y1;
+      if (action === "moving") {
+        // Selected element
+        const { id, offsetX, offsetY, position, ...coordinates } =
+          selectedElement as CanvasElement;
+        const width = coordinates.x2 - coordinates.x1;
+        const height = coordinates.y2 - coordinates.y1;
 
-          const newX1 = clientX - offsetX!;
-          const newY1 = clientY - offsetY!;
+        const newX1 = clientX - offsetX!;
+        const newY1 = clientY - offsetY!;
 
-          updateElement(id!, newX1, newY1, newX1 + width, newY1 + height);
+        // Update the position of the selected element
+        updateElement(id!, newX1, newY1, newX1 + width, newY1 + height);
 
-          break;
+        // Update the state of the moving element so the bounding is also updated
+        // Without this, the bounding box will not be updated causing stale state
+        setSelectedElement((selectedElement) => ({
+          ...selectedElement!,
+          id,
+          x1: newX1,
+          x2: newX1 + width,
+          y1: newY1,
+          y2: newY1 + height,
+        }));
+      }
 
-        case "moving-multiple":
-          translateSelectedLayers(clientX, clientY);
-          break;
+      if (action === "moving-multiple") {
+        translateSelectedLayers(clientX, clientY);
+      }
 
-        case "pressing":
-          startMultipleSelection(
-            { x: clientX, y: clientY },
-            { x: selectionNet!.origin!.x, y: selectionNet!.origin!.y },
-          );
-          break;
+      if (action === "pressing") {
+        startMultipleSelection(
+          { x: clientX, y: clientY },
+          { x: selectionNet!.origin!.x, y: selectionNet!.origin!.y },
+        );
+      }
 
-        case "select":
-          updateSelectionNet(
-            { x: clientX, y: clientY },
-            { x: selectionNet!.origin!.x, y: selectionNet!.origin!.y },
-          );
+      if (action === "select") {
+        updateSelectionNet(
+          { x: clientX, y: clientY },
+          { x: selectionNet!.origin!.x, y: selectionNet!.origin!.y },
+        );
+      }
 
-          break;
-        default:
-          break;
+      if (action === "resizing") {
+        // Selected element
+        const { id, position, ...coordinates } =
+          selectedElement as CanvasElement;
+        const {
+          x1: newX1,
+          y1: newY1,
+          x2: newX2,
+          y2: newY2,
+        } = resizeCoordinates(clientX, clientY, position!, coordinates)!;
+
+        const newResizeX1 = Math.min(newX1, newX2);
+        const newResizeX2 = Math.max(newX1, newX2);
+        const newResizeY1 = Math.min(newY1, newY2);
+        const newResizeY2 = Math.max(newY1, newY2);
+        // Update the position and widt, height of the selected element
+        updateElement(id!, newResizeX1, newResizeY1, newResizeX2, newResizeY2);
+
+        // Update the state of the réizing element so the bounding is also updated !IMPOTANT
+        // Without this, the bounding box will not be updated causing stale state
+        setSelectedElement((selectedElement) => ({
+          ...selectedElement!,
+          id,
+          x1: newResizeX1,
+          x2: newResizeX2,
+          y1: newResizeY1,
+          y2: newResizeY2,
+        }));
       }
     },
     1000 / 60, // 60 FPS

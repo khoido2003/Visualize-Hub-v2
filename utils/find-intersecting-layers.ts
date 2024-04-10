@@ -17,11 +17,15 @@ export function findIntersectingLayers({
     width: Math.abs(origin.x - current.x),
     height: Math.abs(origin.y - current.y),
   };
+  console.log(rect, " Rect");
 
   const elements = [];
   for (const layer of layers) {
     if (layer === null) continue;
     const { x1, x2, y1, y2 } = layer;
+
+    console.log(layer);
+    console.log(rect.x + rect.width > x1 + Math.abs(x2 - x1));
 
     if (
       rect.x + rect.width > x1 + Math.abs(x2 - x1) &&
