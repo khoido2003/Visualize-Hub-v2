@@ -19,16 +19,16 @@ const boundingBox = (layers: readonly LayersType[]) => {
     const minX = Math.min(x1, x2);
     const minY = Math.min(y1, y2);
 
-    if (left > x1) {
+    if (left > minX) {
       left = minX;
     }
-    if (right < x2) {
+    if (right < maxX) {
       right = maxX;
     }
-    if (top > y1) {
+    if (top > minY) {
       top = minY;
     }
-    if (bottom < y2) {
+    if (bottom < maxY) {
       bottom = maxY;
     }
   }
