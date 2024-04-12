@@ -24,14 +24,16 @@ export function findIntersectingLayers({
     if (layer === null) continue;
     const { x1, x2, y1, y2 } = layer;
 
-    console.log(layer);
-    console.log(rect.x + rect.width > x1 + Math.abs(x2 - x1));
+    const minX = Math.min(x1, x2);
+    const maxX = Math.max(x1, x2);
+    const minY = Math.min(y1, y2);
+    const maxY = Math.max(y1, y2);
 
     if (
-      rect.x + rect.width > x1 + Math.abs(x2 - x1) &&
-      rect.x < x1 + Math.abs(x2 - x1) &&
-      rect.y + rect.height > y1 + Math.abs(y2 - y1) &&
-      rect.y < y1 + Math.abs(y2 - y1)
+      rect.x + rect.width > maxX &&
+      rect.x < minX &&
+      rect.y + rect.height > maxY &&
+      rect.y < minY
     ) {
       elements.push(layer);
     }

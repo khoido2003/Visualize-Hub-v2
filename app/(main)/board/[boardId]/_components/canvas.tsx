@@ -717,22 +717,18 @@ export const Canvas = ({ boardId }: CanvasProps) => {
           y2: newY2,
         } = resizeCoordinates(clientX, clientY, position!, coordinates)!;
 
-        const newResizeX1 = Math.min(newX1, newX2);
-        const newResizeX2 = Math.max(newX1, newX2);
-        const newResizeY1 = Math.min(newY1, newY2);
-        const newResizeY2 = Math.max(newY1, newY2);
         // Update the position and widt, height of the selected element
-        updateElement(id!, newResizeX1, newResizeY1, newResizeX2, newResizeY2);
+        updateElement(id!, newX1, newY1, newX2, newY2);
 
         // Update the state of the réizing element so the bounding is also updated !IMPOTANT
         // Without this, the bounding box will not be updated causing stale state
         setSelectedElement((selectedElement) => ({
           ...selectedElement!,
           id,
-          x1: newResizeX1,
-          x2: newResizeX2,
-          y1: newResizeY1,
-          y2: newResizeY2,
+          x1: newX1,
+          x2: newX2,
+          y1: newY1,
+          y2: newY2,
         }));
       }
     },
