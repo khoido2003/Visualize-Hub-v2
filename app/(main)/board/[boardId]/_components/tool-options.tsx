@@ -46,7 +46,7 @@ export const ToolOptions = ({
   };
 
   return (
-    <div className="absolute bottom-0 left-2 top-0 z-50 mb-auto mt-auto h-[500px] w-[230px] rounded-md border-[1px] border-slate-200 p-4 shadow-md dark:bg-gray-100/5">
+    <div className="absolute bottom-0 left-2 top-0 z-50 mb-auto mt-auto h-[350px] w-[230px] rounded-md border-[1px] border-slate-200 p-4 shadow-md dark:bg-gray-100/5">
       {/* Stroke options */}
       <p className="pl-2 text-xs">Stroke</p>
       <div className="flex gap-1 p-2">
