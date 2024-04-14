@@ -1,38 +1,47 @@
 "use client";
 
+// external dependencies
 import rough from "roughjs";
 import { throttle } from "lodash";
+import { LiveObject } from "@liveblocks/client";
 
+// types and constants
+import { HANDLE_WIDTH } from "@/constants";
 import {
   CanvasElement,
+  Color,
   ElementType,
   LayersType,
   Point,
   SelectionNet,
+  StrokePoint,
   ToolOptionsType,
 } from "@/types/canvas";
 
+// Hooks
 import { useMutation, useMyPresence, useStorage } from "@/liveblocks.config";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
-import CursorPresence from "./cursor-display/cursor-presence";
-import { createElement } from "../_actions/create-element";
-import { LiveObject } from "@liveblocks/client";
 import { useDeleteLayers } from "@/hooks/use-delete-elements";
+import { useTheme } from "next-themes";
+import { useSelectionBounds } from "@/hooks/use-selection-bounds";
+
+// UI
+import CursorPresence from "./cursor-display/cursor-presence";
+import { Toolbar } from "./toolbar";
 import { Info } from "./info";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Toolbar } from "./toolbar";
-import { Participants } from "./participants-display/participants";
 import { ToolOptions } from "./tool-options";
-import { useTheme } from "next-themes";
+import { Participants } from "./participants-display/participants";
+
+// Actions
+import { createElement } from "../_actions/create-element";
 import { getElementAtPosition } from "../_actions/get-element-at-position";
 import { findIntersectingLayers } from "@/utils/find-intersecting-layers";
-import { useSelectionBounds } from "@/hooks/use-selection-bounds";
 import { cursorForPosition } from "@/utils/cursor-for-position";
-import { HANDLE_WIDTH } from "@/constants";
 import { resizeCoordinates } from "@/utils/resize-coordinates";
-export interface CanvasProps {
-  boardId: string;
-}
+import { drawElement } from "../_actions/draw-elements";
+
+/////////////////////////////////////////////////////////////
 
 // Implement double buffering to avoid flickering issues when create new element on the canvas:
 // The mechanism is create an offscreen canvas to render the element first, then re-render the element back to the original canvas
@@ -77,6 +86,35 @@ function renderCanvas(
   );
 
   const roughOffscreenCanvas = rough.canvas(offscreenCanvas);
+
+  // Render the elements store inside liveblocks to the canvas
+  layers.forEach((layer, index) => {
+    // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
+    // if (
+    //   resolvedTheme === "dark" &&
+    //   // @ts-ignore
+    //   layer.roughElement!.options.stroke === "#000"
+    // ) {
+    //   // @ts-ignore
+    //   layer.roughElement!.options.stroke = "#fff";
+    // }
+
+    // if (
+    //   resolvedTheme !== "dark" &&
+    //   // @ts-ignore
+    //   layer.roughElement!.options.stroke === "#fff"
+    // ) {
+    //   // @ts-ignore
+    //   layer.roughElement!.options.stroke = "#000";
+    // }
+
+    if (layer.id === index - 1) {
+      // @ts-ignore
+      // roughOffscreenCanvas.draw(layer.roughElement!); // Old way to render the layer
+      // Refactor code to add drawing freehand to the canvas
+      drawElement(roughOffscreenCanvas, context!, layer);
+    }
+  });
 
   // Render the section net to select multiple elements
   if (selectionNet && selectionNet.current) {
@@ -203,41 +241,18 @@ function renderCanvas(
     );
   }
 
-  // Render the elements store inside liveblocks to the canvas
-  layers.forEach((layer, index) => {
-    // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
-    if (
-      resolvedTheme === "dark" &&
-      // @ts-ignore
-      layer.roughElement!.options.stroke === "#000"
-    ) {
-      // @ts-ignore
-      layer.roughElement!.options.stroke = "#fff";
-    }
-
-    if (
-      resolvedTheme !== "dark" &&
-      // @ts-ignore
-      layer.roughElement!.options.stroke === "#fff"
-    ) {
-      // @ts-ignore
-      layer.roughElement!.options.stroke = "#000";
-    }
-
-    if (layer.id === index - 1) {
-      // @ts-ignore
-      roughOffscreenCanvas.draw(layer.roughElement!);
-    }
-  });
-
   // Copy the content of the off-screen canvas onto the visible canvas
   context?.drawImage(offscreenCanvas, 0, 0);
 
   return roughCanvas;
 }
 
-////////////////////////////////
-////////////////////////////////
+/////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+
+export interface CanvasProps {
+  boardId: string;
+}
 
 // MAIN COMPONENT
 export const Canvas = ({ boardId }: CanvasProps) => {
@@ -247,7 +262,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   // Selection net
   const [selectionNet, setSelectionNet] = useState<SelectionNet>();
 
-  // Took options initial state
+  // Took options initial state for roughjs
   const [toolOptions, setToolOptions] = useState<ToolOptionsType>({
     stroke: resolvedTheme === "dark" ? "#fff" : "#000",
     roughness: 0,
@@ -334,7 +349,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   useEffect(() => {
     // Render the canvas
     renderCanvas(layers, resolvedTheme, selectionNet, selectedElement, bounds);
-    // console.log(layers);
+    console.log(layers);
+    console.log(selectedElement);
   }, [layers, resolvedTheme, selectionNet, selectedElement, bounds]);
 
   //-----------------------------------------
@@ -420,6 +436,24 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // console.log(liveLayers.toArray());
     },
     [toolOptions, selectedElement, action],
+  );
+
+  // ---------------------------------------------------------
+
+  // DRAWING FREEHAND
+  const updateDrawingFreehand = useMutation(
+    ({ storage }, x1: number, y1: number, x2: number, y2: number) => {
+      const liveLayers = storage.get("layers");
+      const element = liveLayers.get(layers.length - 1)?.toObject();
+
+      if (element && liveLayers.length > 0) {
+        element.points = [...element!.points!, { x: x2, y: y2 }];
+
+        const updatedElement = new LiveObject(element!);
+        liveLayers.set(layers.length - 1, updatedElement);
+      }
+    },
+    [layers, selectedElement, action],
   );
 
   //---------------------------
@@ -590,24 +624,35 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     }
     // Or create a new element
     else {
+      // Add the new element to the layers array
       // Set the id for the new created element
       const id = layers.length - 1;
-      // console.log(id);
+      let element;
+      if (elementType === ElementType.Pencil) {
+        element = createElement({
+          id,
+          x1: clientX,
+          y1: clientY,
+          x2: clientX,
+          y2: clientY,
+          elementType,
+        });
+      } else {
+        // Rectangle, circle and line elements
+        element = createElement({
+          id,
+          x1: clientX,
+          y1: clientY,
+          x2: clientX,
+          y2: clientY,
+          elementType,
 
-      // Add the new element to the layers array
-      const element = createElement({
-        id,
-        x1: clientX,
-        y1: clientY,
-        x2: clientX,
-        y2: clientY,
-        elementType,
-
-        stroke: toolOptions.stroke,
-        fill: toolOptions.fill,
-        fillStyle: toolOptions.fillStyle,
-        roughness: toolOptions.roughness ? toolOptions.roughness : 1,
-      });
+          stroke: toolOptions.stroke,
+          fill: toolOptions.fill,
+          fillStyle: toolOptions.fillStyle,
+          roughness: toolOptions.roughness ? toolOptions.roughness : 1,
+        });
+      }
 
       // CHange action to drawing
       setAction("drawing");
@@ -631,6 +676,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // Update the mouse cursor style by checking if the cursor is inside the element or not
       if (elementType === "none") {
         const element = getElementAtPosition(clientX, clientY, layers);
+
         document.body.style.cursor = element
           ? cursorForPosition(element.position!)
           : "default";
@@ -659,8 +705,22 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       //-----------------------------
 
       if (action === "drawing") {
-        // Keep the positon, only update the height and width of the element due to the position of the mouse cursor
-        updateElement("no-value", "no-value", "no-value", clientX, clientY);
+        if (
+          elementType === ElementType.Circle ||
+          elementType === ElementType.Rectangle ||
+          elementType === ElementType.Line
+        ) {
+          // Keep the positon, only update the height and width of the element due to the position of the mouse cursor
+          updateElement("no-value", "no-value", "no-value", clientX, clientY);
+        }
+
+        if (elementType === ElementType.Pencil) {
+          const index = layers.length - 1;
+          const { x1, y1, elementType } = layers[index];
+
+          console.log(layers);
+          updateDrawingFreehand(x1, y1, clientX, clientY);
+        }
       }
 
       if (action === "moving") {

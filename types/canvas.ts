@@ -10,6 +10,12 @@ export enum ElementType {
   Erase = "erase",
 }
 
+export type Color = {
+  r: number;
+  g: number;
+  b: number;
+};
+
 export type CanvasElement = {
   id?: number;
   x1: number;

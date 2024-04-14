@@ -17,7 +17,12 @@ export const Room = ({ children, roomId }: RoomProps) => {
     <RoomProvider
       id={roomId}
       initialStorage={{ layers: new LiveList() }}
-      initialPresence={{ cursor: null, selectionLayers: [] }}
+      initialPresence={{
+        cursor: null,
+        selectionLayers: [],
+        pencilDraft: null,
+        penColor: null,
+      }}
     >
       <ClientSideSuspense fallback={<Loading />}>
         {() => children}

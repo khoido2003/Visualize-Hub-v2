@@ -69,11 +69,11 @@ export const Toolbar = ({ setElementType, elementType }: ToolbarProps) => {
       <Button
         variant="board"
         onClick={() => {
-          // setElementType();
+          setElementType(ElementType.Pencil);
         }}
         className={cn(
           "",
-          // elementType === ElementType.Rectangle && "bg-blue-500/20",
+          elementType === ElementType.Pencil && "bg-blue-500/20",
         )}
       >
         <Pencil height={15} width={15} />

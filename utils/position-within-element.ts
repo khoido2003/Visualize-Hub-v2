@@ -1,7 +1,8 @@
-import { CanvasElement } from "@/types/canvas";
+import { CanvasElement, StrokePoint } from "@/types/canvas";
 import { distance } from "./distance";
 import { nearPoint } from "./near-point";
 import { HANDLE_WIDTH } from "@/constants";
+import { onLine } from "./on-line";
 
 export const postionWithinElement = (
   x: number,
@@ -98,6 +99,25 @@ export const postionWithinElement = (
         null;
       break;
 
+    case "pencil":
+      const betweenAnyPoint = layer.points?.some((point, index) => {
+        const nextPoint = layer.points?.[index + 1] as StrokePoint;
+        if (!nextPoint) return false;
+        return (
+          onLine(
+            (point as StrokePoint).x,
+            (point as StrokePoint).y,
+            nextPoint.x,
+            nextPoint.y,
+            x,
+            y,
+            5,
+          ) !== null
+        );
+      });
+
+      positionWithin = betweenAnyPoint ? "inside" : null;
+      break;
     default:
       break;
   }
