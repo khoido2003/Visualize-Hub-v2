@@ -74,6 +74,7 @@ export const createElement = ({
         y2,
         elementType,
         points: [{ x: x1, y: y1 }],
+        stroke,
       };
       break;
 

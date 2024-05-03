@@ -40,6 +40,7 @@ import { findIntersectingLayers } from "@/utils/find-intersecting-layers";
 import { cursorForPosition } from "@/utils/cursor-for-position";
 import { resizeCoordinates } from "@/utils/resize-coordinates";
 import { drawElement } from "../_actions/draw-elements";
+import { ToolOptionsPencils } from "./tool-options-pencil";
 
 /////////////////////////////////////////////////////////////
 
@@ -62,6 +63,9 @@ function renderCanvas(
     width: number;
     height: number;
   } | null,
+  toolPencilOptions: {
+    stroke: string;
+  },
 ) {
   const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
   // Setup the canvas
@@ -90,29 +94,31 @@ function renderCanvas(
   // Render the elements store inside liveblocks to the canvas
   layers.forEach((layer, index) => {
     // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
-    // if (
-    //   resolvedTheme === "dark" &&
-    //   // @ts-ignore
-    //   layer.roughElement!.options.stroke === "#000"
-    // ) {
-    //   // @ts-ignore
-    //   layer.roughElement!.options.stroke = "#fff";
-    // }
+    if (
+      resolvedTheme === "dark" &&
+      layer.elementType !== ElementType.Pencil &&
+      // @ts-ignore
+      layer.roughElement!.options.stroke === "#000"
+    ) {
+      // @ts-ignore
+      layer.roughElement!.options.stroke = "#fff";
+    }
 
-    // if (
-    //   resolvedTheme !== "dark" &&
-    //   // @ts-ignore
-    //   layer.roughElement!.options.stroke === "#fff"
-    // ) {
-    //   // @ts-ignore
-    //   layer.roughElement!.options.stroke = "#000";
-    // }
+    if (
+      resolvedTheme !== "dark" &&
+      layer.elementType !== ElementType.Pencil &&
+      // @ts-ignore
+      layer.roughElement!.options.stroke === "#fff"
+    ) {
+      // @ts-ignore
+      layer.roughElement!.options.stroke = "#000";
+    }
 
     if (layer.id === index - 1) {
       // @ts-ignore
       // roughOffscreenCanvas.draw(layer.roughElement!); // Old way to render the layer
       // Refactor code to add drawing freehand to the canvas
-      drawElement(roughOffscreenCanvas, context!, layer);
+      drawElement(roughOffscreenCanvas, context!, layer, toolPencilOptions,resolvedTheme);
     }
   });
 
@@ -270,6 +276,10 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     fillStyle: "hachure",
   });
 
+  const [toolPencilOptions, setToolPencilOptions] = useState({
+    stroke: resolvedTheme === "dark" ? "#fff" : "#000",
+  });
+
   // Cusror presence
   const [myPresence, updateMyPresence] = useMyPresence();
 
@@ -327,7 +337,14 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     updateCanvasSize();
 
     // Render the canvas and all the elements
-    renderCanvas(layers, resolvedTheme, selectionNet, selectedElement, bounds);
+    renderCanvas(
+      layers,
+      resolvedTheme,
+      selectionNet,
+      selectedElement,
+      bounds,
+      toolPencilOptions,
+    );
 
     // Remove event listener on component unmount
     return () => {
@@ -341,6 +358,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     selectionNet,
     selectedElement,
     bounds,
+    toolPencilOptions,
   ]);
 
   // -------------------------------------------
@@ -348,10 +366,24 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   // Update the canvas when the canvas layer has new elements
   useEffect(() => {
     // Render the canvas
-    renderCanvas(layers, resolvedTheme, selectionNet, selectedElement, bounds);
+    renderCanvas(
+      layers,
+      resolvedTheme,
+      selectionNet,
+      selectedElement,
+      bounds,
+      toolPencilOptions,
+    );
     console.log(layers);
     console.log(selectedElement);
-  }, [layers, resolvedTheme, selectionNet, selectedElement, bounds]);
+  }, [
+    layers,
+    resolvedTheme,
+    selectionNet,
+    selectedElement,
+    bounds,
+    toolPencilOptions,
+  ]);
 
   //-----------------------------------------
 
@@ -636,6 +668,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
           x2: clientX,
           y2: clientY,
           elementType,
+          stroke: toolPencilOptions.stroke,
         });
       } else {
         // Rectangle, circle and line elements
@@ -864,7 +897,19 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       <Toolbar setElementType={setElementType} elementType={elementType} />
 
       {/* Tool options */}
-      <ToolOptions setToolOptions={setToolOptions} toolOptions={toolOptions} />
+      {elementType !== ElementType.Pencil && (
+        <ToolOptions
+          setToolOptions={setToolOptions}
+          toolOptions={toolOptions}
+        />
+      )}
+
+      {elementType === ElementType.Pencil && (
+        <ToolOptionsPencils
+          setToolPencilOptions={setToolPencilOptions}
+          toolPencilOptions={toolPencilOptions}
+        />
+      )}
 
       {/* Canvas */}
       <canvas

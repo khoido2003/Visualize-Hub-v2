@@ -8,6 +8,10 @@ export const drawElement = (
   roughCanvas: RoughCanvas,
   context: CanvasRenderingContext2D,
   layer: LayersType,
+  toolPencilOptions: {
+    stroke: string;
+  },
+  resolvedTheme: string | undefined,
 ) => {
   switch (layer.elementType) {
     case "line":
@@ -19,6 +23,12 @@ export const drawElement = (
 
     case "pencil":
       const stroke = getSvgPathFromStroke(getStroke(layer.points!, {}));
+
+      if (resolvedTheme === "dark" && layer.stroke === "#000") {
+        context.fillStyle = "#fff";
+      } else if (resolvedTheme !== "dark" && layer.stroke === "#fff") {
+        context.fillStyle = "#000";
+      } else context.fillStyle = layer.stroke!;
       context.fill(new Path2D(stroke));
       break;
 
