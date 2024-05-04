@@ -20,6 +20,7 @@ export const createElement = ({
   fillStyle,
   roughness,
   stroke,
+  points,
 }: CanvasElement) => {
   let roughElement;
 
@@ -66,6 +67,18 @@ export const createElement = ({
       );
       break;
     case "pencil":
+      if (points) {
+        return {
+          id,
+          x1,
+          y1,
+          x2,
+          y2,
+          elementType,
+          points,
+          stroke,
+        };
+      }
       return {
         id,
         x1,

@@ -41,6 +41,7 @@ import { cursorForPosition } from "@/utils/cursor-for-position";
 import { resizeCoordinates } from "@/utils/resize-coordinates";
 import { drawElement } from "../_actions/draw-elements";
 import { ToolOptionsPencils } from "./tool-options-pencil";
+import { log } from "console";
 
 /////////////////////////////////////////////////////////////
 
@@ -118,7 +119,13 @@ function renderCanvas(
       // @ts-ignore
       // roughOffscreenCanvas.draw(layer.roughElement!); // Old way to render the layer
       // Refactor code to add drawing freehand to the canvas
-      drawElement(roughOffscreenCanvas, context!, layer, toolPencilOptions,resolvedTheme);
+      drawElement(
+        roughOffscreenCanvas,
+        context!,
+        layer,
+        toolPencilOptions,
+        resolvedTheme,
+      );
     }
   });
 
@@ -374,7 +381,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       bounds,
       toolPencilOptions,
     );
-    console.log(layers);
+    // console.log(layers);
     console.log(selectedElement);
   }, [
     layers,
@@ -468,6 +475,38 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       // console.log(liveLayers.toArray());
     },
     [toolOptions, selectedElement, action],
+  );
+
+  // Update the element created by freehand ddrawing
+  const updatePencilElement = useMutation(
+    ({ storage, self }, id: number, newPoints: StrokePoint[]) => {
+      // The current list of elements
+      const liveLayers = storage.get("layers");
+      const index = id + 1;
+
+      const { x1, y1, x2, y2, elementType, points, stroke } = liveLayers
+        .get(index)!
+        .toObject();
+
+      const element = createElement({
+        id,
+        x1,
+        y1,
+        x2,
+        y2,
+        elementType,
+        points: [...newPoints],
+        stroke,
+      }) as CanvasElement;
+
+      // Create the new state of the element
+      const updatedElement = new LiveObject(element);
+
+      // Move the element to the the new position
+      // Update the new height and width of the element by overwrite it with the new value
+      liveLayers.set(index, updatedElement);
+    },
+    [],
   );
 
   // ---------------------------------------------------------
@@ -640,10 +679,27 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         // If not select multiple
         if (!bounds) {
           // Calculate the distance between the mouse to the coordinates of the element so we can uuse it later to calcualte the new position of the element.
-          const offsetX = clientX - element.x1;
-          const offsetY = clientY - element.y1;
-          // Store the selected element
-          setSelectedElement({ ...element, offsetX, offsetY });
+          // If Drawing with freehand
+          if (element.elementType === "pencil") {
+            // Calculate the distance between each point of the line to the  position of the mouse cursor then sava it to array
+
+            const xOffsets = element.points!.map(
+              (point) => clientX - (point as StrokePoint).x,
+            );
+            const yOffsets = element.points!.map(
+              (point) => clientY - (point as StrokePoint).y,
+            );
+            console.log(element.position);
+            setSelectedElement({ ...element, xOffsets, yOffsets });
+          }
+
+          // If Drawing with rectangle, circle or line
+          else {
+            // Calculate the distance between the mouse to the coordinates of the element
+            const offsetX = clientX - element.x1;
+            const offsetY = clientY - element.y1;
+            setSelectedElement({ ...element, offsetX, offsetY });
+          }
 
           // Check if user moving element or resizing element
           if (element.position === "inside") {
@@ -751,39 +807,59 @@ export const Canvas = ({ boardId }: CanvasProps) => {
           const index = layers.length - 1;
           const { x1, y1, elementType } = layers[index];
 
-          console.log(layers);
+          // console.log(layers);
           updateDrawingFreehand(x1, y1, clientX, clientY);
         }
       }
 
+      //-----------------------------------------
+
       if (action === "moving") {
-        // Selected element
-        const { id, offsetX, offsetY, position, ...coordinates } =
-          selectedElement as CanvasElement;
-        const width = coordinates.x2 - coordinates.x1;
-        const height = coordinates.y2 - coordinates.y1;
+        // If moving the element created by freehand
+        if (selectedElement?.elementType === ElementType.Pencil) {
+          const { id } = selectedElement as CanvasElement;
 
-        const newX1 = clientX - offsetX!;
-        const newY1 = clientY - offsetY!;
+          const newPoints = selectedElement?.points!.map((point, index) => {
+            return {
+              x: clientX - selectedElement.xOffsets![index],
+              y: clientY - selectedElement.yOffsets![index],
+            };
+          });
 
-        // Update the position of the selected element
-        updateElement(id!, newX1, newY1, newX1 + width, newY1 + height);
+          updatePencilElement(id!, newPoints);
+        } else {
+          // Selected element: rectangle, circle, line
+          const { id, offsetX, offsetY, position, ...coordinates } =
+            selectedElement as CanvasElement;
+          const width = coordinates.x2 - coordinates.x1;
+          const height = coordinates.y2 - coordinates.y1;
 
-        // Update the state of the moving element so the bounding is also updated
-        // Without this, the bounding box will not be updated causing stale state
-        setSelectedElement((selectedElement) => ({
-          ...selectedElement!,
-          id,
-          x1: newX1,
-          x2: newX1 + width,
-          y1: newY1,
-          y2: newY1 + height,
-        }));
+          const newX1 = clientX - offsetX!;
+          const newY1 = clientY - offsetY!;
+
+          // Update the position of the selected element
+          updateElement(id!, newX1, newY1, newX1 + width, newY1 + height);
+
+          // Update the state of the moving element so the bounding is also updated
+          // Without this, the bounding box will not be updated causing stale state
+          setSelectedElement((selectedElement) => ({
+            ...selectedElement!,
+            id,
+            x1: newX1,
+            x2: newX1 + width,
+            y1: newY1,
+            y2: newY1 + height,
+          }));
+        }
       }
+
+      // ---------------------------------
 
       if (action === "moving-multiple") {
         translateSelectedLayers(clientX, clientY);
       }
+
+      // ---------------------------------------
 
       if (action === "pressing") {
         startMultipleSelection(
@@ -792,12 +868,16 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         );
       }
 
+      // -----------------------------------------
+
       if (action === "select") {
         updateSelectionNet(
           { x: clientX, y: clientY },
           { x: selectionNet!.origin!.x, y: selectionNet!.origin!.y },
         );
       }
+
+      // -----------------------------------------
 
       if (action === "resizing") {
         // Selected element
