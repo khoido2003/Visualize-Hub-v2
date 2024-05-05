@@ -1,9 +1,17 @@
-# VisualizeHub
-
-<div align="center">
-  <img src="./public//dark-logo.svg" alt="VisualizeHub Logo" width="200">
+<div align="center" style="margin-bottom: 20px;">
+  <h1 style="font-size: 36px; margin-bottom: 10px;">VisualizeHub</h1>
+  <img src="./public/dark-logo.svg" alt="VisualizeHub Logo" width="150" style="margin-bottom: 20px;">
 </div>
 
+<div align="center" style="margin-bottom: 40px;">
+  
+  <img src="https://img.shields.io/badge/TypeScript-informational?style=flat&color=3178c6">
+  <img src="https://img.shields.io/badge/Next.js-informational?style=flat&color=informational">
+  <img src="https://img.shields.io/badge/Tailwind-informational?style=flat&color=38b2ac">
+  <img src="https://img.shields.io/badge/Convex-informational?style=flat&color=4a90e2">
+  <img src="https://img.shields.io/badge/Liveblocks-informational?style=flat&color=00c48f">
+  <img src="https://img.shields.io/badge/Clerk-informational?style=flat&color=555">
+</div>
 Welcome to VisualizeHub - Your Collaborative Visual Workspace!
 
 VisualizeHub is an collaborative visual workspace designed to unleash creativity, streamline teamwork, and bring ideas to life. Whether you're a creative professional, project manager, educator, or part of a remote team, VisualizeHub provides a versatile platform for ideation, planning, and innovation.
