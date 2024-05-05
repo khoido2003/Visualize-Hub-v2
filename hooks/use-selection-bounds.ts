@@ -1,5 +1,6 @@
 import { useSelf, useStorage } from "@/liveblocks.config";
-import { LayersType } from "@/types/canvas";
+import { CanvasElement, LayersType } from "@/types/canvas";
+import { memo } from "react";
 
 const boundingBox = (layers: readonly LayersType[]) => {
   const firstElement = layers[0];
@@ -46,8 +47,6 @@ const boundingBox = (layers: readonly LayersType[]) => {
   };
 };
 
-export const useSelectionBounds = () => {
-  const seletionLayers = useSelf((me) => me.presence.selectionLayers);
-
+export const selectionBounds = (seletionLayers: CanvasElement[]) => {
   return boundingBox(seletionLayers);
 };

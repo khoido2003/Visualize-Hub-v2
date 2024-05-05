@@ -19,11 +19,26 @@ import {
 } from "@/types/canvas";
 
 // Hooks
-import { useMutation, useMyPresence, useStorage } from "@/liveblocks.config";
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import {
+  useMutation,
+  useMyPresence,
+  useSelf,
+  useStorage,
+} from "@/liveblocks.config";
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useDeleteLayers } from "@/hooks/use-delete-elements";
 import { useTheme } from "next-themes";
-import { useSelectionBounds } from "@/hooks/use-selection-bounds";
+import { selectionBounds } from "@/hooks/use-selection-bounds";
+import usePressedKeys from "@/hooks/use-pressed-key";
+import { useKeyboardEvent } from "@/hooks/use-keyboard-event";
 
 // UI
 import CursorPresence from "./cursor-display/cursor-presence";
@@ -32,6 +47,7 @@ import { Info } from "./info";
 import { ModeToggle } from "@/components/mode-toggle";
 import { ToolOptions } from "./tool-options";
 import { Participants } from "./participants-display/participants";
+import { ToolOptionsPencils } from "./tool-options-pencil";
 
 // Actions
 import { createElement } from "../_actions/create-element";
@@ -40,11 +56,8 @@ import { findIntersectingLayers } from "@/utils/find-intersecting-layers";
 import { cursorForPosition } from "@/utils/cursor-for-position";
 import { resizeCoordinates } from "@/utils/resize-coordinates";
 import { drawElement } from "../_actions/draw-elements";
-import { ToolOptionsPencils } from "./tool-options-pencil";
-import { log } from "console";
 import { getMouseCoordinates } from "@/utils/get-mouse-coordinates";
-import usePressedKeys from "@/hooks/use-pressed-key";
-import { useKeyboardEvent } from "@/hooks/use-keyboard-event";
+import { ZoomIndicator } from "./zoom-indicator";
 
 /////////////////////////////////////////////////////////////
 
@@ -70,6 +83,13 @@ function renderCanvas(
     x: number;
     y: number;
   },
+  scale: number,
+  setScaleOffset: Dispatch<
+    SetStateAction<{
+      x: number;
+      y: number;
+    }>
+  >,
 ) {
   const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
   // Setup the canvas
@@ -83,9 +103,24 @@ function renderCanvas(
   // Erase the whole canvas or else the old element or old state will still be there and causing some weird behaviors.
   context!.clearRect(0, 0, canvas!.width, canvas!.height);
 
+  // Calculate the scaled dimension and offset when zoom in/out
+  const scaleWidth = canvas.width * scale;
+  const scaleHeight = canvas.height * scale;
+
+  const scaleOffsetX = (scaleWidth - canvas.width) / 2;
+  const scaleOffsetY = (scaleHeight - canvas.height) / 2;
+  setScaleOffset({ x: scaleOffsetX, y: scaleOffsetY });
+
   // Draw all elements directly onto the canvas
   context?.save();
-  context?.translate(panOffset.x, panOffset.y);
+  // Translate the canvas based on pan or zoom:
+  context?.translate(
+    panOffset.x * scale - scaleOffsetX,
+    panOffset.y * scale - scaleOffsetY,
+  );
+
+  // Zoom the canvas
+  context?.scale(scale, scale);
 
   layers.forEach((layer, index) => {
     if (
@@ -265,6 +300,11 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     y: 0,
   });
 
+  // Zoom in/out in canvas
+  const [scale, setScale] = useState(1);
+  const [scaleOffset, setScaleOffset] = useState({ x: 0, y: 0 });
+
+  // Check the current key being pressed
   const pressedKey = usePressedKeys();
 
   // Check if the use pressed the space key
@@ -317,8 +357,12 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     null,
   );
 
+  const seletionLayers = useSelf((me) => me.presence.selectionLayers);
   // Handle selection net to choose multiple elements
-  const bounds = useSelectionBounds();
+  const bounds = useMemo(
+    () => selectionBounds(seletionLayers),
+    [seletionLayers],
+  );
 
   // ----------------------------------------
 
@@ -328,7 +372,6 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   // Chnage the cursor to grab when panning
   useEffect(() => {
-    console.log(isSpaceDown);
     if (isSpaceDown) {
       document.body.style.cursor = "grab            ";
     } else {
@@ -364,6 +407,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       bounds,
       toolPencilOptions,
       panOffset,
+      scale,
+      setScaleOffset,
     );
 
     // Remove event listener on component unmount
@@ -380,6 +425,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     bounds,
     toolPencilOptions,
     panOffset,
+    scale,
+    setScaleOffset,
   ]);
 
   // -------------------------------------------
@@ -395,6 +442,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       bounds,
       toolPencilOptions,
       panOffset,
+      scale,
+      setScaleOffset,
     );
     // console.log(layers);
     // console.log(selectedElement);
@@ -406,23 +455,58 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     bounds,
     toolPencilOptions,
     panOffset,
+    scale,
+    setScaleOffset,
   ]);
+
+  // ----------------------------------------------------
+
+  // Handle zoom function
+  const onZoom = useCallback(
+    (delta: number) => {
+      // definde the zoom step
+      const zoomStep = delta > 0 ? 0.1 : -0.1;
+
+      // calculate the new scale factor
+      const newScale = scale + zoomStep;
+
+      // define the minimum and maximum scale factor
+      const minScale = 0.1;
+      const maxScale = 10;
+
+      // Ensure the new scale factor stays within the defined range
+      const clampedScale = Math.min(Math.max(newScale, minScale), maxScale);
+
+      // Update the scale
+      setScale(clampedScale);
+    },
+    [scale],
+  );
 
   // Handle pan scrolling
   useEffect(() => {
-    const panFunction = (event: WheelEvent) => {
-      // console.log(event.deltaY, event.deltaY);
-      setPanOffset((prev) => ({
-        x: prev.x - event.deltaX,
-        y: prev.y - event.deltaY,
-      }));
+    const panOrZoomFunction = (event: WheelEvent) => {
+      if (pressedKey.has("Meta") || pressedKey.has("Control")) {
+        // Prevent default zoom behavior
+        event.preventDefault();
+
+        // Adjust the zoom factor as desired
+        const zoomFactor = event.deltaY > 0 ? 0 - 1 : 0.1;
+
+        onZoom(zoomFactor);
+      } else {
+        setPanOffset((prev) => ({
+          x: prev.x - event.deltaX,
+          y: prev.y - event.deltaY,
+        }));
+      }
     };
 
-    document.addEventListener("wheel", panFunction);
+    document.addEventListener("wheel", panOrZoomFunction, { passive: false });
     return () => {
-      document.removeEventListener("wheel", panFunction);
+      document.removeEventListener("wheel", panOrZoomFunction);
     };
-  }, []);
+  }, [pressedKey, onZoom]);
 
   //-----------------------------------------
 
@@ -613,11 +697,14 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       });
 
       // console.log(layers);
-      // // console.log(elementsIntersectionArr);
+      // console.log(elementsIntersectionArr);
       // console.log(self.presence.selectionLayers);
 
       // Add al the selected layers to the list of layers in presence
-      setMyPresence({ selectionLayers: elementsIntersectionArr });
+      setMyPresence(
+        { selectionLayers: elementsIntersectionArr },
+        { addToHistory: true },
+      );
     },
     [layers, action],
   );
@@ -633,6 +720,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const translateSelectedLayers = useMutation(
     ({ storage, self }, clientX: number, clientY: number) => {
       console.log(self.presence.selectionLayers);
+      console.log(bounds);
 
       const offsetX = clientX - bounds!.centerX;
       const offsetY = clientY - bounds!.centerY;
@@ -675,7 +763,12 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
     // Check the current position of the mouse cursor
-    const { clientX, clientY } = getMouseCoordinates(event, panOffset);
+    const { clientX, clientY } = getMouseCoordinates(
+      event,
+      panOffset,
+      scale,
+      scaleOffset,
+    );
 
     // Find the element that going to be selected
     if (elementType === "none") {
@@ -794,7 +887,12 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const handleMouseMove = throttle(
     (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
       // The new height and width of the element or position of mouse cursor
-      const { clientX, clientY } = getMouseCoordinates(event, panOffset);
+      const { clientX, clientY } = getMouseCoordinates(
+        event,
+        panOffset,
+        scale,
+        scaleOffset,
+      );
 
       // Panning in the canvas with mouse + space
       if (action === "panning") {
@@ -968,7 +1066,12 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const handleMouseUp = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
-    const { clientX, clientY } = getMouseCoordinates(event, panOffset);
+    const { clientX, clientY } = getMouseCoordinates(
+      event,
+      panOffset,
+      scale,
+      scaleOffset,
+    );
 
     setAction("none");
 
@@ -1024,7 +1127,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       <Info boardId={boardId} />
 
       {/*  Mode toggle light/dark */}
-      <div className="absolute bottom-2 right-2 z-50 hidden md:block">
+      <div className="absolute bottom-2 right-2 z-50 block">
         <ModeToggle />
       </div>
 
@@ -1046,6 +1149,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
           toolPencilOptions={toolPencilOptions}
         />
       )}
+
+      <ZoomIndicator onZoom={onZoom} scale={scale} setScale={setScale} />
 
       {/* Canvas */}
       <canvas
