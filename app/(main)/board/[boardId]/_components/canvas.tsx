@@ -42,15 +42,14 @@ import { resizeCoordinates } from "@/utils/resize-coordinates";
 import { drawElement } from "../_actions/draw-elements";
 import { ToolOptionsPencils } from "./tool-options-pencil";
 import { log } from "console";
+import { getMouseCoordinates } from "@/utils/get-mouse-coordinates";
+import usePressedKeys from "@/hooks/use-pressed-key";
+import { useKeyboardEvent } from "@/hooks/use-keyboard-event";
 
 /////////////////////////////////////////////////////////////
 
 // Implement double buffering to avoid flickering issues when create new element on the canvas:
 // The mechanism is create an offscreen canvas to render the element first, then re-render the element back to the original canvas
-
-// Create an off-screen canvas (back buffer)
-const offscreenCanvas = document.createElement("canvas");
-const offscreenContext = offscreenCanvas.getContext("2d");
 
 // Helper function: Render the display canvas on the screen
 function renderCanvas(
@@ -67,34 +66,28 @@ function renderCanvas(
   toolPencilOptions: {
     stroke: string;
   },
+  panOffset: {
+    x: number;
+    y: number;
+  },
 ) {
   const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
   // Setup the canvas
-  offscreenCanvas.width = canvas.width;
-  offscreenCanvas.height = canvas.height;
 
   // representing a two-dimensional rendering context.
   const context = canvas!.getContext("2d");
 
+  // // Linking roughjs to html canvas
+  const roughCanvas = rough.canvas(canvas!);
+
   // Erase the whole canvas or else the old element or old state will still be there and causing some weird behaviors.
   context!.clearRect(0, 0, canvas!.width, canvas!.height);
 
-  // Linking roughjs to html canvas
-  const roughCanvas = rough.canvas(canvas!);
+  // Draw all elements directly onto the canvas
+  context?.save();
+  context?.translate(panOffset.x, panOffset.y);
 
-  // Draw all elements onto the off-screen canvas
-  offscreenContext!.clearRect(
-    0,
-    0,
-    offscreenCanvas.width,
-    offscreenCanvas.height,
-  );
-
-  const roughOffscreenCanvas = rough.canvas(offscreenCanvas);
-
-  // Render the elements store inside liveblocks to the canvas
   layers.forEach((layer, index) => {
-    // the rough element from roughjs currently does not compatible with liveblocks so I have to turn off typescript for this line
     if (
       resolvedTheme === "dark" &&
       layer.elementType !== ElementType.Pencil &&
@@ -116,11 +109,8 @@ function renderCanvas(
     }
 
     if (layer.id === index - 1) {
-      // @ts-ignore
-      // roughOffscreenCanvas.draw(layer.roughElement!); // Old way to render the layer
-      // Refactor code to add drawing freehand to the canvas
       drawElement(
-        roughOffscreenCanvas,
+        roughCanvas,
         context!,
         layer,
         toolPencilOptions,
@@ -152,7 +142,7 @@ function renderCanvas(
   }
 
   // Render the bounding box for single element
-  if (selectedElement) {
+  if (selectedElement && selectedElement.elementType !== ElementType.Pencil) {
     const { x1, x2, y1, y2 } = selectedElement;
     const minX = Math.min(x1, x2) - 10;
     const minY = Math.min(y1, y2) - 10;
@@ -254,8 +244,7 @@ function renderCanvas(
     );
   }
 
-  // Copy the content of the off-screen canvas onto the visible canvas
-  context?.drawImage(offscreenCanvas, 0, 0);
+  context?.restore();
 
   return roughCanvas;
 }
@@ -269,6 +258,18 @@ export interface CanvasProps {
 
 // MAIN COMPONENT
 export const Canvas = ({ boardId }: CanvasProps) => {
+  // Add panning functionality
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [startPanMousePosition, setStartPanMousePosition] = useState({
+    x: 0,
+    y: 0,
+  });
+
+  const pressedKey = usePressedKeys();
+
+  // Check if the use pressed the space key
+  const [isSpaceDown] = useKeyboardEvent();
+
   // Check dark mode or light mode
   const { resolvedTheme } = useTheme();
 
@@ -308,6 +309,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     | "pressing"
     | "moving-multiple"
     | "resizing"
+    | "panning"
   >("none");
 
   // Check the current element being selected
@@ -323,6 +325,16 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   // These two state just to keep the canvas re-rendering when we change the window size
   const [innerHeight, setInnerHeight] = useState<number>(0);
   const [innerWidth, setInnerWidth] = useState<number>(0);
+
+  // Chnage the cursor to grab when panning
+  useEffect(() => {
+    console.log(isSpaceDown);
+    if (isSpaceDown) {
+      document.body.style.cursor = "grab            ";
+    } else {
+      document.body.style.cursor = "default";
+    }
+  }, [isSpaceDown]);
 
   // Update the canvas width and height when resize
   useEffect(() => {
@@ -351,6 +363,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       selectedElement,
       bounds,
       toolPencilOptions,
+      panOffset,
     );
 
     // Remove event listener on component unmount
@@ -366,6 +379,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     selectedElement,
     bounds,
     toolPencilOptions,
+    panOffset,
   ]);
 
   // -------------------------------------------
@@ -380,9 +394,10 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       selectedElement,
       bounds,
       toolPencilOptions,
+      panOffset,
     );
     // console.log(layers);
-    console.log(selectedElement);
+    // console.log(selectedElement);
   }, [
     layers,
     resolvedTheme,
@@ -390,7 +405,24 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     selectedElement,
     bounds,
     toolPencilOptions,
+    panOffset,
   ]);
+
+  // Handle pan scrolling
+  useEffect(() => {
+    const panFunction = (event: WheelEvent) => {
+      // console.log(event.deltaY, event.deltaY);
+      setPanOffset((prev) => ({
+        x: prev.x - event.deltaX,
+        y: prev.y - event.deltaY,
+      }));
+    };
+
+    document.addEventListener("wheel", panFunction);
+    return () => {
+      document.removeEventListener("wheel", panFunction);
+    };
+  }, []);
 
   //-----------------------------------------
 
@@ -580,9 +612,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         layers,
       });
 
-      console.log(layers);
-      // console.log(elementsIntersectionArr);
-      console.log(self.presence.selectionLayers);
+      // console.log(layers);
+      // // console.log(elementsIntersectionArr);
+      // console.log(self.presence.selectionLayers);
 
       // Add al the selected layers to the list of layers in presence
       setMyPresence({ selectionLayers: elementsIntersectionArr });
@@ -643,7 +675,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
     // Check the current position of the mouse cursor
-    const { clientX, clientY } = event;
+    const { clientX, clientY } = getMouseCoordinates(event, panOffset);
 
     // Find the element that going to be selected
     if (elementType === "none") {
@@ -689,7 +721,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
             const yOffsets = element.points!.map(
               (point) => clientY - (point as StrokePoint).y,
             );
-            console.log(element.position);
+
             setSelectedElement({ ...element, xOffsets, yOffsets });
           }
 
@@ -708,6 +740,11 @@ export const Canvas = ({ boardId }: CanvasProps) => {
             setAction("resizing");
           }
         } else return;
+      }
+
+      if (event.button === 1 || pressedKey.has(" ")) {
+        setAction("panning");
+        setStartPanMousePosition({ x: clientX, y: clientY });
       }
     }
     // Or create a new element
@@ -757,10 +794,26 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const handleMouseMove = throttle(
     (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
       // The new height and width of the element or position of mouse cursor
-      const { clientX, clientY } = event;
+      const { clientX, clientY } = getMouseCoordinates(event, panOffset);
+
+      // Panning in the canvas with mouse + space
+      if (action === "panning") {
+        document.body.style.cursor = "grabbing";
+
+        const deltaX = clientX - startPanMousePosition.x;
+        const deltaY = clientY - startPanMousePosition.y;
+        setPanOffset((prev) => ({
+          x: prev.x + deltaX,
+          y: prev.y + deltaY,
+        }));
+
+        return;
+      }
 
       // Update the position of the user cursor position to liveblocks
-      updateMyPresence({ cursor: { x: clientX, y: clientY } });
+      updateMyPresence({
+        cursor: { x: clientX - panOffset.x, y: clientY - panOffset.y },
+      });
 
       // Update the mouse cursor style by checking if the cursor is inside the element or not
       if (elementType === "none") {
@@ -915,7 +968,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
   const handleMouseUp = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
-    const { clientX, clientY } = event;
+    const { clientX, clientY } = getMouseCoordinates(event, panOffset);
+
     setAction("none");
 
     setSelectionNet(undefined);
@@ -949,6 +1003,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   ) => {
     updateMyPresence({ cursor: null });
+    setSelectedElement(null);
   };
 
   /////////////////////////////////////
@@ -977,12 +1032,13 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       <Toolbar setElementType={setElementType} elementType={elementType} />
 
       {/* Tool options */}
-      {elementType !== ElementType.Pencil && (
-        <ToolOptions
-          setToolOptions={setToolOptions}
-          toolOptions={toolOptions}
-        />
-      )}
+      {elementType !== ElementType.Pencil &&
+        elementType !== ElementType.None && (
+          <ToolOptions
+            setToolOptions={setToolOptions}
+            toolOptions={toolOptions}
+          />
+        )}
 
       {elementType === ElementType.Pencil && (
         <ToolOptionsPencils
