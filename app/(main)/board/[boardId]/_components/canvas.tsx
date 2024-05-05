@@ -20,6 +20,9 @@ import {
 
 // Hooks
 import {
+  useCanRedo,
+  useCanUndo,
+  useHistory,
   useMutation,
   useMyPresence,
   useSelf,
@@ -58,6 +61,7 @@ import { resizeCoordinates } from "@/utils/resize-coordinates";
 import { drawElement } from "../_actions/draw-elements";
 import { getMouseCoordinates } from "@/utils/get-mouse-coordinates";
 import { ZoomIndicator } from "./zoom-indicator";
+import { UndoRedoHistory } from "./undo-redo-history";
 
 /////////////////////////////////////////////////////////////
 
@@ -293,6 +297,15 @@ export interface CanvasProps {
 
 // MAIN COMPONENT
 export const Canvas = ({ boardId }: CanvasProps) => {
+  // Save the history when drawing on the board
+  const history = useHistory();
+
+  // Undo the history
+  const canUndo = useCanUndo();
+
+  // Redo the history
+  const canRedo = useCanRedo();
+
   // Add panning functionality
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [startPanMousePosition, setStartPanMousePosition] = useState({
@@ -1151,6 +1164,13 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       )}
 
       <ZoomIndicator onZoom={onZoom} scale={scale} setScale={setScale} />
+
+      <UndoRedoHistory
+        undo={history.undo}
+        redo={history.redo}
+        canRedo={canRedo}
+        canUndo={canUndo}
+      />
 
       {/* Canvas */}
       <canvas
