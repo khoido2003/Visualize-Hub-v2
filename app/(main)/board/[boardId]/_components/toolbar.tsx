@@ -19,7 +19,7 @@ interface ToolbarProps {
 
 export const Toolbar = ({ setElementType, elementType }: ToolbarProps) => {
   return (
-    <div className="absolute left-0 right-0 top-2 z-50 ml-auto mr-auto flex h-12 w-[360px] items-center gap-1 rounded-md px-1.5 shadow-md dark:bg-gray-100/10">
+    <div className="absolute left-0 right-0 top-2 z-50 ml-auto mr-auto flex h-12 w-[320px] items-center gap-1 rounded-md px-1.5 shadow-md dark:bg-gray-100/10">
       <Button
         className={cn("", elementType === ElementType.None && "bg-blue-500/20")}
         onClick={() => {
@@ -79,7 +79,7 @@ export const Toolbar = ({ setElementType, elementType }: ToolbarProps) => {
         <Pencil height={15} width={15} />
       </Button>
 
-      <Button
+      {/* <Button
         variant="board"
         onClick={() => {
           // setElementType();
@@ -90,16 +90,16 @@ export const Toolbar = ({ setElementType, elementType }: ToolbarProps) => {
         )}
       >
         <Type height={15} width={15} />
-      </Button>
+      </Button> */}
 
       <Button
         variant="board"
         onClick={() => {
-          // setElementType();
+          setElementType(ElementType.Erase);
         }}
         className={cn(
           "",
-          // elementType === ElementType.Rectangle && "bg-blue-500/20",
+          elementType === ElementType.Erase && "bg-blue-500/20",
         )}
       >
         <Eraser height={15} width={15} />
