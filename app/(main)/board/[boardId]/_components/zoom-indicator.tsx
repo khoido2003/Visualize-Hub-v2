@@ -12,7 +12,7 @@ export const ZoomIndicator = ({
   setScale,
 }: ZoomIndicatorProps) => {
   return (
-    <div className="absolute bottom-1 right-16 z-50 flex h-12 items-center gap-4 rounded ">
+    <div className="absolute bottom-1 left-2 z-50 flex h-12 items-center gap-4 rounded ">
       <button
         className="rounded-md px-3 py-1 shadow-md dark:bg-gray-100/10"
         onClick={() => onZoom(-0.1)}

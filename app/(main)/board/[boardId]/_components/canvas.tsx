@@ -363,6 +363,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     | "moving-multiple"
     | "resizing"
     | "panning"
+    | "erase"
   >("none");
 
   // Check the current element being selected
@@ -783,8 +784,19 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       scaleOffset,
     );
 
+    if (elementType === ElementType.Erase) {
+      setAction("erase");
+      const element = getElementAtPosition(clientX, clientY, layers);
+
+      if (element) {
+        console.log(element);
+        deleteLayers(element.id! + 1);
+        console.log(layers);
+      }
+    }
+
     // Find the element that going to be selected
-    if (elementType === "none") {
+    else if (elementType === "none") {
       // Check if the mouse is clicking
       setAction("pressing");
 
@@ -1086,29 +1098,33 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       scaleOffset,
     );
 
-    setAction("none");
+    if (action === "erase") {
+      setAction("erase");
+    } else {
+      setAction("none");
 
-    setSelectionNet(undefined);
+      setSelectionNet(undefined);
 
-    // Unselect multiple elements
-    if (
-      elementType === ElementType.None &&
-      (action === "pressing" || action === "none")
-    ) {
-      unSelectedLayers();
-    }
-    // If the cursor is on an element then change the action to moving and not create a selection net
-    const element = getElementAtPosition(clientX, clientY, layers);
-    // If the element is existing
-    if (element) {
-      if (myPresence.selectionLayers.length === 0) {
-        // Store the selected element
-        setSelectedElement({ ...element });
-        // Unselect multiple elements
+      // Unselect multiple elements
+      if (
+        elementType === ElementType.None &&
+        (action === "pressing" || action === "none")
+      ) {
         unSelectedLayers();
       }
-    } else {
-      setSelectedElement(null);
+      // If the cursor is on an element then change the action to moving and not create a selection net
+      const element = getElementAtPosition(clientX, clientY, layers);
+      // If the element is existing
+      if (element) {
+        if (myPresence.selectionLayers.length === 0) {
+          // Store the selected element
+          setSelectedElement({ ...element });
+          // Unselect multiple elements
+          unSelectedLayers();
+        }
+      } else {
+        setSelectedElement(null);
+      }
     }
   };
 
@@ -1165,12 +1181,12 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
       <ZoomIndicator onZoom={onZoom} scale={scale} setScale={setScale} />
 
-      <UndoRedoHistory
+      {/* <UndoRedoHistory
         undo={history.undo}
         redo={history.redo}
         canRedo={canRedo}
         canUndo={canUndo}
-      />
+      /> */}
 
       {/* Canvas */}
       <canvas
